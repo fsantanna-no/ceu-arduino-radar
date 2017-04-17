@@ -1,0 +1,63 @@
+#include "arduino/arduino.ceu"
+
+//#define NODE_MASTER true
+#define NODE_MASTER false
+
+#define PIN_TRIGGER PIN_07
+#define PIN_ECHO    PIN_08
+
+output int PIN_TRIGGER;
+input  int PIN_ECHO;
+
+code/await Dist (void) -> int do
+    emit PIN_TRIGGER(0);
+    await 2us;
+    emit PIN_TRIGGER(1);
+    await 10us;
+    emit PIN_TRIGGER(0);
+
+    _Serial.print(">>>\n");
+    var int v = await PIN_ECHO until v==1;
+    _Serial.print("|||\n");
+    var u32 old = _micros();
+    var int v = await PIN_ECHO until v==0;
+    _Serial.print("<<<\n");
+    var u32 us = _micros() - old;
+    var int cm = (us as int)/29/2;
+    escape cm;
+end
+
+input  int PIN_02;
+output int PIN_13;
+
+_Serial.begin(9600);
+
+if NODE_MASTER then
+    _Serial.print("MASTER\n");
+else
+    _Serial.print("SLAVE\n");
+    _Serial.print("await...\n");
+    var int v = await PIN_02 until v==1;
+    var int cm = await Dist();
+    _Serial.print(cm);
+    _Serial.print("cm [S]\n");
+    await 5s;
+end
+
+emit PIN_13(0);
+loop do
+    _Serial.print("trigger!\n");
+    emit PIN_13(1);
+    await 1ms;
+    emit PIN_13(0);
+    var int cm = await Dist();
+    _Serial.print(cm);
+    _Serial.print("cm [M]\n");
+
+    _Serial.print("await...\n");
+    var int v = await PIN_02 until v==1;
+    var int cm = await Dist();
+    _Serial.print(cm);
+    _Serial.print("cm [S]\n");
+    await 5s;
+end

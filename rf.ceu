@@ -1,0 +1,50 @@
+#include "arduino/arduino.ceu"
+
+#define ID 99
+
+#define TX_PIN      7
+#define RX_PIN      8
+
+native/pre do
+    ##include <VirtualWire.h>
+end
+{
+    vw_set_tx_pin(TX_PIN);
+    //vw_set_ptt_inverted(true);
+    vw_set_rx_pin(RX_PIN);
+    vw_setup(2000);     // bps
+    vw_rx_start();      // Inicializa o receptor
+}
+
+_Serial.begin(9600);
+
+par do
+    every 1s do
+        {{
+            u8 id = ID;
+            Serial.print("tx'ing...\n");
+            vw_send(&id, 1);
+            vw_wait_tx();
+            Serial.print("tx'ed...\n");
+        }}
+    end
+with
+    loop do
+        await async do
+            var u8 id  = _;
+            var u8 len = _;
+            _Serial.print("rx'ing...\n");
+            loop do
+                if {vw_get_message(@(&&id), @(&&len))} as bool then
+                    _ceu_dbg_assert(len == 1);
+                    _Serial.print(id);
+                    _Serial.print("id\n");
+                    if id == ID then
+                        break;
+                    end
+                end
+            end
+            _Serial.print("rx'ed...\n");
+        end
+    end
+end
