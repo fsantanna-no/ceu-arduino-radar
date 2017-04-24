@@ -3,62 +3,18 @@
 #include "mic.ceu"
 #include "rf.ceu"
 
-var int dist = _;           // set immediately in "sonar.ceu"
+#define ID 99
+
+_Serial.begin(9600);
+
+var u32 tt = 0;                                     // total game time
+
+var int dist = _;                                   // set immediately in "sonar.ceu"
 spawn (dist) do
     #include "sonar.ceu"
 end
 
-#define ID          99
-
-#define SOUND_PIN   A0
-#define SOUND_LIMIT 400
-
-#define TX_PIN      7
-#define RX_PIN      8
-
-native/pre do
-    ##include <VirtualWire.h>
-end
-{
-    vw_set_tx_pin(TX_PIN);
-    vw_set_ptt_inverted(true);
-    vw_set_rx_pin(RX_PIN);
-    vw_setup(2000);     // bps
-    vw_rx_start();      // Inicializa o receptor
-}
-
-code/tight Ping_Blocks (void) -> void do
-    {{
-        u8 id = ID;
-        vw_send(&id, 1);
-        Serial.print("tx'ing...\n");
-        vw_wait_tx();
-        Serial.print("tx'ed...\n");
-    }}
-end
-
-code/await Pong (void) -> void do
-    await async do
-        var u8 id  = _;
-        var u8 len = _;
-        _Serial.print("rx'ing...\n");
-        loop do
-            if {vw_get_message(@(&&id), @(&&len))} as bool then
-                _ceu_dbg_assert(len == 1);
-                _Serial.print(id);
-                _Serial.print("id\n");
-                if id == ID then
-                    break;
-                end
-            end
-        end
-        _Serial.print("rx'ed...\n");
-    end
-end
-
-_Serial.begin(9600);
-
-var int seq;
+var u16 seq;
 loop seq in [1 -> _[ do
     var bool next_is_him = do
         par do
@@ -74,14 +30,47 @@ loop seq in [1 -> _[ do
         end
     end;
 
+    var u32 t0 = _millis();                         // start time of this sequence: set immediately every touch
+    var u32 ts = _;                                 // total time until the last touch in this sequence
+
+    do finalize with
+        _Serial.print("FIM DA SEQUENCIA: ");
+        _Serial.print(ts);
+        _Serial.println("ms");
+        tt = tt + ts;
+    end
+
     spawn () do
         #include "playing.ceu"
     end
 
-    var int touch;
+    var u32 old = _micros();
+    var u16 touch;
     loop touch in [1 -> _[ do
+        ts = _millis() - t0;
+
+        var u32 us = _micros() - old;
+        var int km_h = dist*36000/(us as int);
+        var int m_s = do
+            if touch > 1 then
+                _ceu_dbg_assert(us > 0);
+                escape dist/(us as int)*1000;
+            else
+                escape 0;
+            end
+        end;
+
+        _Serial.print("seq: ");   _Serial.print(seq);   _Serial.print(" | ");
+        _Serial.print("touch: "); _Serial.print(touch); _Serial.print(" | ");
+        _Serial.print("vel: ");   _Serial.print(m_s);   _Serial.print("m/s | ");
+        _Serial.print("dist: ");  _Serial.print(dist);  _Serial.print("cm | ");
+        _Serial.print("time: ");  _Serial.print(ts);    _Serial.println("ms");
+
+        if tt+ts > 1000*15 then
+            break/seq;                              // 15s of gameplay
+        end
+
         par/or do
-            var u32 old = _micros();
 
             if next_is_him then
                 _Serial.println("await him");
@@ -96,20 +85,6 @@ loop seq in [1 -> _[ do
             end
 
             next_is_him = (not next_is_him);
-
-            var u32 us = _micros() - old;
-            var int km_h = dist*36000/(us as int);
-            var int m_s  = dist/(us as int)*1000;
-            _Serial.print("seq ");
-            _Serial.print(seq);
-            _Serial.print(" | ");
-            _Serial.print("touch ");
-            _Serial.print(touch);
-            _Serial.print(" | ");
-            _Serial.print(m_s);
-            _Serial.print("ms | ");
-            _Serial.print(dist);
-            _Serial.println("dist");
         with
             await 5s;                               // 5 seconds w/ response
             break;
@@ -118,3 +93,9 @@ loop seq in [1 -> _[ do
 
     _Serial.println("QUEDA");
 end
+
+_Serial.print("FIM DE JOGO: ");
+_Serial.print(seq);
+_Serial.println(" sequencias");
+
+await FOREVER;
