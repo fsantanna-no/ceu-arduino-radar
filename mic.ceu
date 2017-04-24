@@ -1,0 +1,23 @@
+#include "arduino/arduino.ceu"
+
+#define SOUND_PIN   A0
+#define SOUND_LIMIT 400
+
+_pinMode(SOUND_PIN, INPUT);
+code/await Touch (void) -> void do
+    await async do
+        loop do
+            var int v = _analogRead(SOUND_PIN);
+            if v > SOUND_LIMIT then
+                _Serial.print(v);
+                _Serial.println("db");
+                break;
+            end
+        end
+    end
+end
+
+_Serial.begin(9600);
+loop do
+    await Touch();
+end
