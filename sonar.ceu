@@ -1,29 +1,56 @@
+// Sensor spec: 10Hz reading rate
+
 #include "arduino/arduino.ceu"
+
+#define MAX 10       // holds 10 measures, 1s of player movement
+native/plain _u16;
+vector[MAX] _u16 measures = _;
+
+var int nxt = 0;
+var int tot = 0;
 
 input int PIN_03;
 
 _Serial.begin(9600);
 
-every 200ms do
-  var int a  = _analogRead(A5);
-  var int mV = (a * 5 / 1.024) as int;
-  //int cm = 5 * v / 5/1024; // 5mm * Vread / Vref/1024
-  var int cm = (5 * (mV/4.883) / 10) as int;
-  //int v = pulseIn(3, HIGH);
-  //int cm = v/10;
+code/tight A_to_CM (var int a) -> int do
+    escape (a / 2 * 2.54) as int;
+end
 
-  //in = cm/2.54;
+// set all measures = <first read>
+var int old = call A_to_CM(_analogRead(A5));
+var int i;
+var int tot = 0;
+loop i in [0 -> MAX[ do
+    measures[i] = old;
+    tot = tot + old;
+end
 
-  _Serial.println("-----");
-  _Serial.print(mV);
-  _Serial.println(" mV");
-  _Serial.print(cm);
-  _Serial.println(" cm");
+#ifndef MAIN
+var int dist = tot / MAX;
+#endif
 
-  //Pulse Width representation with a scale factor of 147 uS per Inch.
-  var int pulse = _pulseIn(3, HIGH);
-  var int inches = pulse / 147;
-  cm = (inches * 2.54) as int;
-  _Serial.print(cm);
-  _Serial.println(" cm");
+// read every 100ms, maximum value that makes sense according to the spec
+every 100ms do
+    var int cm = call A_to_CM(_analogRead(A5));
+
+    // players are always within 3 to 15m
+    //if cm<300 or cm>1500 then
+    if cm<100 or cm>400 then
+        _Serial.print(tot/MAX);
+        _Serial.println(" ??");
+        continue;
+    end
+
+    // players don't move faster than TODO
+    // TODO: qual o maximo movimento razoavel em 100ms?
+    //       se passar disso, sete como isso...
+
+    tot = tot - measures[nxt] + cm;
+    measures[nxt] = cm;
+    nxt = (nxt + 1) % MAX;
+
+    dist = tot / MAX;
+    _Serial.print(dist);
+    _Serial.println(" cm");
 end 

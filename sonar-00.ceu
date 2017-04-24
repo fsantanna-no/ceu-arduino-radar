@@ -1,0 +1,34 @@
+#include "arduino/arduino.ceu"
+
+input int PIN_03;
+
+_Serial.begin(9600);
+
+every 200ms do
+    var int a  = _analogRead(A5);
+    var int mV = (a * 5 / 1.024) as int;
+    //int cm = 5 * v / 5/1024; // 5mm * Vread / Vref/1024
+    var int cm = (5 * (mV/4.883) / 10) as int;
+    //int v = pulseIn(3, HIGH);
+    //int cm = v/10;
+
+    //in = cm/2.54;
+
+    _Serial.println("-----");
+    _Serial.print(mV);
+    _Serial.println(" mV");
+    _Serial.print(cm);
+    _Serial.println(" cm");
+
+    var int inches = a / 2;
+    var int cm = (inches * 2.54) as int;
+    _Serial.print(cm);
+    _Serial.println(" cm");
+
+    //Pulse Width representation with a scale factor of 147 uS per Inch.
+    var int pulse = _pulseIn(3, HIGH);
+    var int inches = pulse / 147;
+    cm = (inches * 2.54) as int;
+    _Serial.print(cm);
+    _Serial.println(" cm");
+end 

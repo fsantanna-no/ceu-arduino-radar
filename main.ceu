@@ -1,6 +1,12 @@
+#define MAIN
 #include "arduino/arduino.ceu"
 
 //#define DISPLAY
+
+var int dist = _;
+spawn (dist) do
+    #include "sonar.ceu"
+end
 
 #define ID          99
 
