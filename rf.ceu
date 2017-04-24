@@ -1,7 +1,5 @@
 #include "arduino/arduino.ceu"
 
-#define RX
-#define TX
 #define ID 0x30
 #define TO (0x30 + (0x31-ID))
 
@@ -11,63 +9,43 @@
 native/pre do
     ##include <VirtualWire.h>
 end
+
 {
-#ifdef TX
     vw_set_tx_pin(TX_PIN);
     //vw_set_ptt_inverted(true);
     vw_setup(2000);     // bps
-#endif
-#ifdef RX
     //vw_set_ptt_inverted(true);
     vw_set_rx_pin(RX_PIN);
     vw_setup(2000);     // bps
     vw_rx_start();      // Inicializa o receptor
-#endif
 }
 
-_Serial.begin(9600);
-_Serial.print("## ID ");
-_Serial.println(ID, HEX);
+code/tight Tx (void) -> void do
+    {{
+        u8 to = TO;
+        vw_send(&to, 1);
+        vw_wait_tx();
+    }}
+end
 
-par do
-    var int i = 0;
-    every 1s do
-#ifdef TX
-        i = i + 1;
-        {{
-            u8 to = TO;
-            vw_send(&to, 1);
-            vw_wait_tx();
-            Serial.print("-> ");
-            Serial.println(@i);
-        }}
-#endif
-    end
-with
-    loop do
-        await async do
-#ifdef RX
-{
-u8 X;
-u8 LEN;
-}
-            loop do
-                var u8 to  = _;
-                var u8 len = _;
-                //if {vw_get_message(@(&&to), @(&&len))} as bool then
-                    //_ceu_dbg_assert({LEN} == 1);
-                    //_Serial.println(to);
-                if {vw_get_message(&X, &LEN)} as bool then
-                    _ceu_dbg_assert({LEN} == 1);
-                    _Serial.print("<- ");
-                    _Serial.println({X}, HEX);
-                    if {X} == ID then
-                        break;
-                    end
-                end
+code/await Rx (void) -> void do
+    await async do
+        {
+            u8 X;
+            u8 LEN;
+        }
+        loop do
+            var u8 to  = _;
+            var u8 len = _;
+            //if {vw_get_message(@(&&to), @(&&len))} as bool then
+                //_ceu_dbg_assert({LEN} == 1);
+                //_Serial.println(to);
+            if {vw_get_message(&X, &LEN)} as bool then
+                _ceu_dbg_assert({LEN} == 1);
+                //if {X} == ID then
+                    break;
+                //end
             end
-            _Serial.println("OK!");
-#endif
         end
     end
 end

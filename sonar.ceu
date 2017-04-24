@@ -11,8 +11,6 @@ var int tot = 0;
 
 input int PIN_03;
 
-_Serial.begin(9600);
-
 code/tight A_to_CM (var int a) -> int do
     escape (a / 2 * 2.54) as int;
 end
@@ -28,6 +26,7 @@ end
 
 #ifndef MAIN
 var int dist = tot / MAX;
+_Serial.begin(9600);
 #endif
 
 // read every 100ms, maximum value that makes sense according to the spec
@@ -37,8 +36,10 @@ every 100ms do
     // players are always within 3 to 15m
     //if cm<300 or cm>1500 then
     if cm<100 or cm>400 then
+#ifndef MAIN
         _Serial.print(tot/MAX);
         _Serial.println(" ??");
+#endif
         continue;
     end
 
@@ -51,6 +52,8 @@ every 100ms do
     nxt = (nxt + 1) % MAX;
 
     dist = tot / MAX;
+#ifndef MAIN
     _Serial.print(dist);
     _Serial.println(" cm");
+#endif
 end 

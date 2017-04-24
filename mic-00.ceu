@@ -4,24 +4,20 @@
 #define SOUND_LIMIT 400
 
 _pinMode(SOUND_PIN, INPUT);
-code/await Mic (void) -> void do
+code/await Touch (void) -> void do
     await async do
         loop do
             var int v = _analogRead(SOUND_PIN);
             if v > SOUND_LIMIT then
-#ifndef MAIN
                 _Serial.print(v);
                 _Serial.println("db");
-#endif
                 break;
             end
         end
     end
 end
 
-#ifndef MAIN
 _Serial.begin(9600);
 loop do
-    await Mic();
+    await Touch();
 end
-#endif

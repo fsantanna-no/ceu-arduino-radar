@@ -1,9 +1,9 @@
 #define MAIN
 #include "arduino/arduino.ceu"
+#include "mic.ceu"
+#include "rf.ceu"
 
-//#define DISPLAY
-
-var int dist = _;
+var int dist = _;           // set immediately in "sonar.ceu"
 spawn (dist) do
     #include "sonar.ceu"
 end
@@ -15,31 +15,6 @@ end
 
 #define TX_PIN      7
 #define RX_PIN      8
-
-#define DIST_PIN    0
-#define DIST_PIN_ID PIN_01
-
-#if 1
-_pinMode(SOUND_PIN, INPUT);
-code/await Touch (void) -> void do
-    await async do
-        loop do
-            var int v = _analogRead(SOUND_PIN);
-            if v > SOUND_LIMIT then
-                _Serial.print(v);
-                _Serial.print("db\n");
-                break;
-            end
-        end
-    end
-end
-#else
-input int PIN_02;
-code/await Touch (void) -> void do
-    var int v = await PIN_02 until v==1;
-    await 200ms;
-end
-#endif
 
 native/pre do
     ##include <VirtualWire.h>
@@ -81,77 +56,65 @@ code/await Pong (void) -> void do
     end
 end
 
-input int DIST_PIN_ID;
-code/await Dist (void) -> int do
-    _pinMode(DIST_PIN, OUTPUT);
-    _digitalWrite(DIST_PIN, LOW);
-    await 2us;
-    _digitalWrite(DIST_PIN, HIGH);
-    var u32 old = _micros();
-    await 5us;
-    _digitalWrite(DIST_PIN, LOW);
-
-    _pinMode(DIST_PIN, INPUT);
-    await DIST_PIN_ID;
-    var u32 us = _micros() - old;
-    var int cm = (us as int)/29/2;
-    escape cm;
-end
-
 _Serial.begin(9600);
-
-output int PIN_13;
-emit PIN_13(1);
 
 var int seq;
 loop seq in [1 -> _[ do
-    loop do
-        //var Side side = await Touch();
-        await Touch();
-        emit PIN_13(0);
-        do finalize with
-            emit PIN_13(1);
+    var bool next_is_him = do
+        par do
+            //var Side side = await Mic();
+            await Mic();                            // my hit
+            _Serial.println("my hit");
+            call Tx();
+            escape true;
+        with
+            await Rx();                             // his hit
+            _Serial.println("his hit");
+            escape false;
         end
-        var int cm = _;
-        var int us = _;
+    end;
 
-#if 0
-        await 2s;
-#else
-        watching 2s do
-            par/and do
-                var u32 old = _micros();
-                await Pong();
-                us = _micros() - old;
-            with
-                cm = await Dist();
-// TODO: o que fazer se distancia curta???
-            with
-await 1s;
-                call Ping_Blocks();         // call last because of blocking call
+    spawn () do
+        #include "playing.ceu"
+    end
+
+    var int touch;
+    loop touch in [1 -> _[ do
+        par/or do
+            var u32 old = _micros();
+
+            if next_is_him then
+                _Serial.println("await him");
+                await Rx();                         // his hit
+                _Serial.println("his hit");
+            else
+                //var Side side = await Mic();
+                _Serial.println("await myself");
+                await Mic();                        // my hit
+                _Serial.println("my hit");
+                call Tx();
             end
-            var int km_h = cm*36000/us;
-            var int m_s  = cm/us*1000;
-#ifdef DISPLAY
-            call Display(seq.." "..cm/10.." "..m_s);
-#else
+
+            next_is_him = (not next_is_him);
+
+            var u32 us = _micros() - old;
+            var int km_h = dist*36000/(us as int);
+            var int m_s  = dist/(us as int)*1000;
             _Serial.print("seq ");
             _Serial.print(seq);
             _Serial.print(" | ");
+            _Serial.print("touch ");
+            _Serial.print(touch);
+            _Serial.print(" | ");
             _Serial.print(m_s);
             _Serial.print("ms | ");
-            _Serial.print(cm);
-            _Serial.print("cm\n");
-#endif
-            continue;
+            _Serial.print(dist);
+            _Serial.println("dist");
+        with
+            await 5s;                               // 5 seconds w/ response
+            break;
         end
-#endif
-
-#ifdef DISPLAY
-        call Display("QUEDA");
-#else
-        _Serial.print("QUEDA\n");
-#endif
-        break;
     end
+
+    _Serial.println("QUEDA");
 end

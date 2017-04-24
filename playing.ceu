@@ -1,0 +1,12 @@
+output bool PIN_13;
+
+do finalize with
+    emit PIN_13(LOW);
+end
+
+loop do
+    await 200ms;
+    emit PIN_13(HIGH);
+    await 200ms;
+    emit PIN_13(LOW);
+end
