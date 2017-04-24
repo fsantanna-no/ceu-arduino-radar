@@ -27,7 +27,7 @@ end
 
 _Serial.begin(9600);
 _Serial.print("## ID ");
-_Serial.println(ID, {HEX});
+_Serial.println(ID, HEX);
 
 par do
     var int i = 0;
@@ -60,8 +60,8 @@ u8 LEN;
                 if {vw_get_message(&X, &LEN)} as bool then
                     _ceu_dbg_assert({LEN} == 1);
                     _Serial.print("<- ");
-                    _Serial.println({X}, {HEX});
-                    if to == ID then
+                    _Serial.println({X}, HEX);
+                    if {X} == ID then
                         break;
                     end
                 end
