@@ -6,6 +6,7 @@
 #define ID 99
 
 _Serial.begin(9600);
+_randomSeed(_analogRead(A3));
 
 var u32 tt = 0;                                     // total game time
 
@@ -16,15 +17,29 @@ end
 
 var u16 seq;
 loop seq in [1 -> _[ do
+    _Serial.print(">>> SEQUENCIA ");
+    _Serial.println(seq);
+
     var bool next_is_him = do
+#if 0
+        loop do
+            watching (_random(500,1000)) ms do
+                await Rx(0);
+                break;
+            end
+            watching (_random(500,1000)) ms do
+                await Tx(0);
+            end
+        end
+#endif
+
         par do
             //var Side side = await Mic();
             await Mic();                            // my hit
             _Serial.println("my hit");
-            //call Tx();
             escape true;
         with
-            await Rx();                             // his hit
+            await Rx(1);                            // his hit
             _Serial.println("his hit");
             escape false;
         end
@@ -34,7 +49,7 @@ loop seq in [1 -> _[ do
     var u32 ts = _;                                 // total time until the last touch in this sequence
 
     do finalize with
-        _Serial.print("FIM DA SEQUENCIA: ");
+        _Serial.print("<<< SEQUENCIA ");
         _Serial.print(ts);
         _Serial.println("ms");
         tt = tt + ts;
@@ -60,35 +75,34 @@ loop seq in [1 -> _[ do
             end
         end;
 
-        _Serial.print("seq: ");   _Serial.print(seq);   _Serial.print(" | ");
+        //_Serial.print("seq: ");   _Serial.print(seq);   _Serial.print(" | ");
         _Serial.print("touch: "); _Serial.print(touch); _Serial.print(" | ");
         _Serial.print("vel: ");   _Serial.print(m_s);   _Serial.print("m/s | ");
         _Serial.print("dist: ");  _Serial.print(dist);  _Serial.print("cm | ");
         _Serial.print("time: ");  _Serial.print(ts);    _Serial.println("ms");
 
-        if tt+ts > 1000*15 then
-            break/seq;                              // 15s of gameplay
-        end
-
         par/or do
-
             if next_is_him then
                 _Serial.println("await him");
-spawn Tx();
-                await Rx();                         // his hit
+                spawn Tx(touch);
+                await Rx(touch+1);                  // his hit
                 _Serial.println("his hit");
             else
                 //var Side side = await Mic();
                 _Serial.println("await myself");
                 await Mic();                        // my hit
                 _Serial.println("my hit");
-                //call Tx();
             end
 
             next_is_him = (not next_is_him);
         with
             await 5s;                               // 5 seconds w/ response
             break;
+        with
+            if tt+ts <= 1000*15 then
+                await (1000*15-(tt+ts))ms;          // time left
+            end
+            break/seq;                              // 15s of gameplay
         end
     end
 

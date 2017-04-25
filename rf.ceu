@@ -20,19 +20,32 @@ end
     vw_rx_start();      // Inicializa o receptor
 }
 
-code/await Tx (void) -> void do
-    loop do
-        {{
-            u8 to = TO;
-            vw_send(&to, 1);
-            vw_wait_tx();
-        }}
-        await 50ms;
-    end
+//code/tight Tx (void) -> void do
+code/await Tx (var u16 touch) -> void do
+    //loop do
+var u32 v1 = _micros();
+        await async (touch) do
+            var int i;
+            loop i in [0 -> 5[ do           // 5*48 = 240ms
+                {{
+                    u8 touch = @touch;      // TODO: remove
+                    vw_send(&touch, 1);     // TODO: u16
+                    vw_wait_tx();           // takes 48ms
+                }}
+            end
+        end
+var u32 v2 = _micros() - v1;
+_Serial.print("send ");
+_Serial.print(touch);
+_Serial.print(" | ");
+_Serial.print(v2);
+_Serial.println("us");
+        //await 200ms;                // TODO: try 50ms?
+    //end
 end
 
-code/await Rx (void) -> void do
-    await async do
+code/await Rx (var u16 touch) -> void do
+    await async (touch) do
         {
             u8 X;
             u8 LEN;
@@ -45,9 +58,11 @@ code/await Rx (void) -> void do
                 //_Serial.println(to);
             if {vw_get_message(&X, &LEN)} as bool then
                 _ceu_dbg_assert({LEN} == 1);
-                //if {X} == ID then
+_Serial.print("recv ");
+_Serial.println({X});
+                if touch == {X} then    // TODO: u16
                     break;
-                //end
+                end
             end
         end
     end
