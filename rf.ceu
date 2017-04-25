@@ -20,12 +20,15 @@ end
     vw_rx_start();      // Inicializa o receptor
 }
 
-code/tight Tx (void) -> void do
-    {{
-        u8 to = TO;
-        vw_send(&to, 1);
-        vw_wait_tx();
-    }}
+code/await Tx (void) -> void do
+    loop do
+        {{
+            u8 to = TO;
+            vw_send(&to, 1);
+            vw_wait_tx();
+        }}
+        await 50ms;
+    end
 end
 
 code/await Rx (void) -> void do

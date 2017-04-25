@@ -21,7 +21,7 @@ loop seq in [1 -> _[ do
             //var Side side = await Mic();
             await Mic();                            // my hit
             _Serial.println("my hit");
-            call Tx();
+            //call Tx();
             escape true;
         with
             await Rx();                             // his hit
@@ -74,6 +74,7 @@ loop seq in [1 -> _[ do
 
             if next_is_him then
                 _Serial.println("await him");
+spawn Tx();
                 await Rx();                         // his hit
                 _Serial.println("his hit");
             else
@@ -81,7 +82,7 @@ loop seq in [1 -> _[ do
                 _Serial.println("await myself");
                 await Mic();                        // my hit
                 _Serial.println("my hit");
-                call Tx();
+                //call Tx();
             end
 
             next_is_him = (not next_is_him);
