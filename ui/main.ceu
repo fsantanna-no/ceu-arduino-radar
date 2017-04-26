@@ -1,0 +1,32 @@
+#include "c.ceu"
+#include "sdl/sdl.ceu"
+
+#define WIDTH  1024
+#define HEIGHT  576
+
+var SDL_Color bg = val SDL_Color(0x00,0x00,0x00,0xFF);
+
+var& _SDL_Renderer ren;
+var&? SDL_Init sdl = spawn SDL_Init("Radar", WIDTH,HEIGHT, bg);
+watching sdl do
+    var& SDL_Open_Sound whistle = spawn SDL_Open_Sound("click1.wav");
+
+    //var& SDL_Open_Image img = spawn SDL_Open_Image(&sdl!.ren, "img.png");
+    //var SDL_Rect img_rct = val SDL_Rect(100, 100, img.tex.width, img.tex.height);
+
+    var& SDL_Open_Font font = spawn SDL_Open_Font("DejaVuSansMono.ttf", 40);
+
+    spawn do
+        #include "names.ceu"
+    end
+    spawn do
+        #include "clock.ceu"
+    end
+
+    _Mix_PlayChannel(-1, &&whistle.sound, 0);
+    every 5s do
+        _Mix_PlayChannel(-1, &&whistle.sound, 0);
+    end
+end
+
+escape 0;

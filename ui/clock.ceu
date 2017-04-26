@@ -1,0 +1,26 @@
+var u32 time = 5 * 60 * 1000;
+loop do
+    var u32 dt = 50 + _rand()%100;
+    watching (dt) ms do
+        vector[10] _char str = _;
+        do
+            var u32 min = time / (60*1000);
+            var u32   s = time % (60*1000) / 1000;
+            var u32  ms = time % (60*1000) % 1000;
+            _snprintf(&&str[0], 10, "%02d:%02d:%03d", min, s, ms);
+        end
+
+        var& SDL_New_Text txt =
+            spawn SDL_New_Text(&sdl!.ren, &font.font, &&str[0],
+                               SDL_Color(0xFF,0xFF,0xFF,0xFF));
+        var int w = _;
+        _ceu_dbg_assert(_TTF_SizeText(&&font.font, &&str[0], &&w, null) == 0);
+        var SDL_Rect rct =
+            val SDL_Rect(WIDTH/2-w/2, 20, txt.tex.width, txt.tex.height);
+
+        every SDL_REDRAW do
+            _SDL_RenderCopy(&&sdl!.ren, &&txt.tex.tex, null, &&rct as _SDL_Rect&&);
+        end
+    end
+    time = time - dt;
+end
