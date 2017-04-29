@@ -1,0 +1,66 @@
+#include "arduino/arduino.ceu"
+
+#define TX_PIN      7
+#define RX_PIN      8
+
+native/pre do
+    ##include <VirtualWire.h>
+end
+{
+    vw_set_tx_pin(TX_PIN);
+    vw_setup(2000);
+    vw_set_rx_pin(RX_PIN);
+    vw_rx_start();
+}
+
+_Serial.begin(9600);
+
+var u8? nxt;
+var u32 i;
+loop i in [1 -> _[ do
+    var u8 ii = i as u8;
+    var u8 j;
+    var u32 v1 = _micros();
+    loop j in [1 -> 4] do
+        {{
+            u8 msg[2] = { @ii, @j };     // [1] 192.4ms -> [2] 216.5ms
+            vw_send(msg, 2);
+            vw_wait_tx();
+        }}
+    end
+    var u32 v2 = _micros();
+    _Serial.print("-> [");
+    _Serial.print(ii);
+    _Serial.print("] ");
+    _Serial.println(v2 - v1);
+
+    par/or do
+        await async (ii,nxt) do
+            loop do
+                native/nohold _vw_get_message;
+                native/plain _u8;
+                vector[2] _u8 msg = _;
+                var u8 len = 2;
+                if _vw_get_message(&&msg[0], &&len) as bool then
+                    if not nxt? then
+                        nxt = msg[0];
+                    end
+                    if msg[0] == nxt! then
+                        _ceu_dbg_assert(len == 2);
+                        _Serial.print("<- ");
+                        _Serial.print(msg[0]);
+                        _Serial.print(".");
+                        _Serial.println(msg[1]);
+                        break;
+                    end
+                end
+            end
+        end
+    with
+        await 1s;
+        _Serial.println("=== LOST");
+    end
+
+    nxt = nxt! + 1;
+    await 250ms;            // 100km/h -> 7m = 252ms
+end
