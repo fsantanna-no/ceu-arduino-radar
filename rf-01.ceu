@@ -15,10 +15,10 @@ end
 
 _Serial.begin(9600);
 
-var int? nxt;
-var int i;
+var u8? nxt;
+var u8 i;
 loop i in [1 -> _[ do
-    var int j;
+    var u8 j;
     var u32 v1 = _micros();
     loop j in [1 -> 4] do
         {{
