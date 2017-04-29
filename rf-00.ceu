@@ -34,9 +34,9 @@ par do
     every 1s do
 #ifdef TX
         i = i + 1;
+        var u8 to = TO;
         {{
-            u8 to = TO;
-            vw_send(&to, 1);
+            vw_send(@(&&to), 1);
             vw_wait_tx();
             Serial.print("-> ");
             Serial.println(@i);
@@ -47,21 +47,17 @@ with
     loop do
         await async do
 #ifdef RX
-{
-u8 X;
-u8 LEN;
-}
             loop do
-                var u8 to  = _;
-                var u8 len = _;
-                //if {vw_get_message(@(&&to), @(&&len))} as bool then
-                    //_ceu_dbg_assert({LEN} == 1);
-                    //_Serial.println(to);
-                if {vw_get_message(&X, &LEN)} as bool then
-                    _ceu_dbg_assert({LEN} == 1);
+                var u8 to  = 10;
+                var u8 len = 10;
+                native/nohold _vw_get_message;
+                if _vw_get_message(&&to, &&len) as bool then
+                    //_ceu_dbg_assert(len == 1);
                     _Serial.print("<- ");
-                    _Serial.println({X}, HEX);
-                    if {X} == ID then
+                    _Serial.print(to, HEX);
+                    _Serial.print(" : ");
+                    _Serial.println(len);
+                    if to == ID then
                         break;
                     end
                 end
