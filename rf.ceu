@@ -30,29 +30,29 @@ code/await Tx (var u16 touch) -> void do
     //loop do
     vector[2] _u8 msg = _;
     msg[0] = touch as u8; // TODO u16
-var u32 v1 = _micros();
-        // 192ms is safe to terminate before the other side hits and transmits concurrently
-        var int i;
-        loop i in [0 -> 4[ do           // 4*48 = 192ms
+    var u32 v1 = _micros();
+    // 192ms is safe to terminate before the other side hits and transmits concurrently
+    var int i;
+    loop i in [0 -> 4[ do           // 4*48 = 192ms
 var u32 v2 = _micros();
 _ceu_dbg_assert(v2-v1 <= 255000);
 var u8 dt = ((v2 - v1) / 1000) as int;
-            msg[1] = dt;
-            _vw_send(&&msg[0], 2);        // TODO: u16
-            //vw_wait_tx();           // takes 48ms + ?
+        msg[1] = dt;
+        _vw_send(&&msg[0], 2);        // TODO: u16
+        //vw_wait_tx();           // takes 48ms + ?
 // TODO: mandar um segundo byte com o tempo em ms passado desde o p1o envio
-            do finalize with
-                _vw_wait_tx();          // TODO-1
-            end
-            await async do
-                loop do
-                    if not (_vw_tx_active() as bool) then    // takes 48ms
-                        break;
-                    end
+        do finalize with
+            _vw_wait_tx();          // TODO-1
+        end
+        await async do
+            loop do
+                if not (_vw_tx_active() as bool) then    // takes 48ms
+                    break;
                 end
             end
-// usar ack p/ calcular ping
         end
+// usar ack p/ calcular ping
+    end
 var u32 v2 = _micros() - v1;
 _Serial.print("send ");
 _Serial.print(touch);
