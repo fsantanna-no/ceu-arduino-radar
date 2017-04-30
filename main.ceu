@@ -1,7 +1,16 @@
 #define MAIN
 #include "arduino/arduino.ceu"
 #include "mic.ceu"
-#include "rf.ceu"
+#include "rf.ceu"       // 1-15 ms latency
+
+/*
+ * TODO:
+ *  - re-testar
+ *  - colocar millis de atraso no pacote de resposta
+ *  - fazer o esquema de responder ao microfone mesmo sem receber ACK (perda de pacotes, 2 toques)
+ *      - 2 toques na bola vai dar merda
+ *  - ;
+ */
 
 #define ID 99
 
@@ -20,26 +29,15 @@ loop seq in [1 -> _[ do
     _Serial.print(">>> SEQUENCIA ");
     _Serial.println(seq);
 
+    var int late = 0;
     var bool next_is_him = do
-#if 0
-        loop do
-            watching (_random(500,1000)) ms do
-                await Rx(0);
-                break;
-            end
-            watching (_random(500,1000)) ms do
-                await Tx(0);
-            end
-        end
-#endif
-
         par do
             //var Side side = await Mic();
             await Mic();                            // my hit
             _Serial.println("my hit");
             escape true;
         with
-            await Rx(1);                            // his hit
+            late = await Rx(1);                     // his hit
             _Serial.println("his hit");
             escape false;
         end
@@ -85,13 +83,18 @@ loop seq in [1 -> _[ do
             if next_is_him then
                 _Serial.println("await him");
                 spawn Tx(touch);
-                await Rx(touch+1);                  // his hit
-                _Serial.println("his hit");
+                late = await Rx(touch+1);           // his hit
+                _Serial.print("his hit, late: ");
+                _Serial.println(late);
             else
                 //var Side side = await Mic();
                 _Serial.println("await myself");
+                var u32 v1 = _millis();
                 await Mic();                        // my hit
-                _Serial.println("my hit");
+                var u32 v2 = _millis() - v1;
+                _Serial.print("my hit ");
+                _Serial.println(v2);
+                _ceu_dbg_assert(v2 > 200);
             end
 
             next_is_him = (not next_is_him);

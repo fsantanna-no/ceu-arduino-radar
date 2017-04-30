@@ -6,6 +6,11 @@
 #define TX_PIN      7
 #define RX_PIN      8
 
+native/plain _u8;
+native/nohold _vw_get_message;
+native _vw_wait_tx, _vw_tx_active;
+native/nohold _vw_send;             // TODO-1
+
 native/pre do
     ##include <VirtualWire.h>
 end
@@ -23,16 +28,30 @@ end
 //code/tight Tx (void) -> void do
 code/await Tx (var u16 touch) -> void do
     //loop do
+    vector[2] _u8 msg = _;
+    msg[0] = touch as u8; // TODO u16
 var u32 v1 = _micros();
-        await async (touch) do
-            var int i;
-            loop i in [0 -> 5[ do           // 5*48 = 240ms
-                {{
-                    u8 touch = @touch;      // TODO: remove
-                    vw_send(&touch, 1);     // TODO: u16
-                    vw_wait_tx();           // takes 48ms
-                }}
+        // 192ms is safe to terminate before the other side hits and transmits concurrently
+        var int i;
+        loop i in [0 -> 4[ do           // 4*48 = 192ms
+var u32 v2 = _micros();
+_ceu_dbg_assert(v2-v1 <= 255000);
+var u8 dt = ((v2 - v1) / 1000) as int;
+            msg[1] = dt;
+            _vw_send(&&msg[0], 2);        // TODO: u16
+            //vw_wait_tx();           // takes 48ms + ?
+// TODO: mandar um segundo byte com o tempo em ms passado desde o p1o envio
+            do finalize with
+                _vw_wait_tx();          // TODO-1
             end
+            await async do
+                loop do
+                    if not (_vw_tx_active() as bool) then    // takes 48ms
+                        break;
+                    end
+                end
+            end
+// usar ack p/ calcular ping
         end
 var u32 v2 = _micros() - v1;
 _Serial.print("send ");
@@ -44,26 +63,68 @@ _Serial.println("us");
     //end
 end
 
-code/await Rx (var u16 touch) -> void do
-    await async (touch) do
-        {
-            u8 X;
-            u8 LEN;
-        }
-        loop do
-            var u8 to  = _;
-            var u8 len = _;
-            //if {vw_get_message(@(&&to), @(&&len))} as bool then
-                //_ceu_dbg_assert({LEN} == 1);
-                //_Serial.println(to);
-            if {vw_get_message(&X, &LEN)} as bool then
-                _ceu_dbg_assert({LEN} == 1);
-_Serial.print("recv ");
-_Serial.println({X});
-                if touch == {X} then    // TODO: u16
-                    break;
+code/await Rx (var u16 touch) -> int do
+    vector[2] _u8 msg = _;
+    loop do
+        await async (msg) do
+            var u8 tot = 2;
+            loop do
+                var u8 len = 2;
+                if _vw_get_message(&&msg[2-tot], &&len) as bool then
+_Serial.print("LEN ");
+_Serial.println(len);
+_Serial.print("tot ");
+_Serial.println(tot);
+                    tot = tot - len;
+                    if tot == 0 then
+                        break;
+                    end
                 end
+            end
+        end
+_Serial.print("recv ");
+_Serial.print(msg[0]);
+_Serial.print(".");
+_Serial.print(msg[1]);
+        if touch == msg[0] then    // TODO: u16
+_Serial.println(" ok");
+            escape msg[1];
+        else
+_Serial.println(" no");
+        end
+    end
+end
+
+#if 0
+code/await Rx (var u16 touch) -> int do
+    await async (touch) do
+        loop do
+            native/plain _u8;
+            native/nohold _vw_get_message;
+            vector[2] _u8 msg = _;
+            var u8 len = _;
+            var int tot = 2;
+            loop do
+                if _vw_get_message(&&msg[2-tot],&&len) as bool then
+                    tot = tot - (len as int);
+                    _ceu_dbg_assert(tot == 2);
+                    _ceu_dbg_assert(tot >= 0);
+                    if tot == 0 then
+                        break;
+                    end
+                end
+            end
+_Serial.print("recv ");
+_Serial.print(msg[0]);
+_Serial.print(".");
+_Serial.print(msg[1]);
+            if touch == msg[0] then    // TODO: u16
+_Serial.println(" ok");
+                break;
+            else
+_Serial.println(" no");
             end
         end
     end
 end
+#endif
