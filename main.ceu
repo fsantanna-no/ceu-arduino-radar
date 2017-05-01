@@ -5,8 +5,6 @@
 
 /*
  * TODO:
- *  - re-testar
- *  - colocar millis de atraso no pacote de resposta
  *  - fazer o esquema de responder ao microfone mesmo sem receber ACK (perda de pacotes, 2 toques)
  *      - 2 toques na bola vai dar merda
  *  - ;

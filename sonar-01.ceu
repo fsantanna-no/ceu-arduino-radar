@@ -1,0 +1,31 @@
+#include "arduino/arduino.ceu"
+
+output int PIN_12;
+
+#define Vcc 4970
+#define V_per_IN    (Vcc / 512)
+#define V_per_CM    (V_per_IN * 2.54)
+
+_Serial.begin(9600);
+
+par do
+    loop do
+        await 5s;
+        emit PIN_12(1);
+        _Serial.println("-----");
+        await 50us;
+        emit PIN_12(0);
+    end
+with
+    every 200ms do
+        var f64 a  = _analogRead(A0);
+        var f64 v  = a * Vcc / 1024;
+        var f64 i  = v / V_per_IN;
+        var f64 cm = i * 2.54;
+
+        //_Serial.print(v);
+        //_Serial.println(" v");
+        _Serial.print(cm);
+        _Serial.println(" cm");
+    end 
+end
