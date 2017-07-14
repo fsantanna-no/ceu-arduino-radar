@@ -1,0 +1,96 @@
+#include "c.ceu"
+
+#if 0
+    - desconsiderar o último par (últimos 2 toques) para
+        - contar somente ataques com continuidade (foi e voltou)
+            - evitar porrada na última bola
+        - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
+#endif
+
+#define MS_TO_GAME              (5*60*1000)     // 5 minutes
+#define MS_TO_FALL              3000            // 3 seconds
+#define DISTANCE_IN_CM          800             // 8 meters
+#define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
+
+input  (u16,u16)     IN_IDS;
+input  u16           IN_TOUCH;
+
+output &u32          GET_TIME;
+
+output void          OUT_GAME_INI;
+output u16           OUT_GAME_END;
+output u16           OUT_SEQUENCE_INI;
+output (u16,u32)     OUT_SEQUENCE_END;
+output u16           OUT_SEQUENCE_FALL;
+output (u16,u16,u32) OUT_TOUCH;
+
+par/or do
+    #include "tests.ceu"
+with
+    loop do
+        var u16 idA;
+        var u16 idB;
+        (idA, idB) = await IN_IDS;
+        _ceu_dbg_assert(idA != idB);
+
+        emit OUT_GAME_INI;
+        var u32 ms_game = 0;                            // total game time
+
+        var u16 seq;
+        loop seq in [1 -> _[ do
+            var[] u32 ms;
+
+            emit OUT_SEQUENCE_INI(seq);
+            do finalize with
+                var u32 dt = do
+                    if $ms >= 2 then
+                        escape ms[$ms-1] - ms[0];       // ms difference between last and 0th touch
+                    else
+                        escape 0;
+                    end
+                end;
+                emit OUT_SEQUENCE_END(seq,dt);
+                ms_game = ms_game + dt;
+            end
+
+            var u16 id1 = await IN_TOUCH;               // start counting after 0th touch
+            _ceu_dbg_assert(id1==idA or id1==idB);
+
+            do
+                var u32 now = _;
+                emit GET_TIME(&now);
+                ms = ms .. [now];
+                emit OUT_TOUCH(0, id1, -1);
+            end
+
+            par/or do                                   // TRACK TOTAL GAME TIME
+                _ceu_dbg_assert(ms_game < MS_TO_GAME);
+                await (MS_TO_GAME-ms_game+1)ms;           // time left
+                break/seq;
+            with                                        // TRACK TOUCHES
+                var u16 touch;
+                loop touch in [1 -> _[ do
+                    par/or do                           // track fall
+                        await (MS_TO_FALL)ms;
+                        break;
+                    with                                // alternate touches between idA/idB
+                        var u16 id2 = await IN_TOUCH until (id2 != id1);
+                        _ceu_dbg_assert(id1==idA or id1==idB);
+                        do
+                            var u32 now = _;
+                            emit GET_TIME(&now);
+                            ms = ms .. [now];
+                        end
+                        emit OUT_TOUCH(touch, id1, ms[$ms-1]-ms[$ms-2]);
+                        id1 = id2;
+                    end
+                end
+                emit OUT_SEQUENCE_FALL(seq);
+            end
+        end
+
+        emit OUT_GAME_END(seq);
+    end
+end
+
+escape 0;
