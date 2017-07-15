@@ -17,14 +17,23 @@ input  u16           IN_TOUCH;
 
 output &u32          GET_TIME;
 
-output void          OUT_GAME_INI;
-output u16           OUT_GAME_END;
-output u16           OUT_SEQUENCE_INI;
-output (u16,u32)     OUT_SEQUENCE_END;
-output u16           OUT_SEQUENCE_FALL;
-output (u16,u16,u32) OUT_TOUCH;
+output (u16,u16)     OUT_GAME_INI;          // idA, idB
+output u16           OUT_GAME_END;          // #seqs
+output u16           OUT_SEQUENCE_INI;      // seq
+output (u16,u32)     OUT_SEQUENCE_END;      // seq, dt
+output u16           OUT_SEQUENCE_FALL;     // seq
+output (u16,u16,u32) OUT_TOUCH;             // touch, id, dt
 
 par/or do
+    #include "abraf.ceu"
+    await FOREVER;
+with
+    #include "media.ceu"
+    await FOREVER;
+with
+    //#include "debug.ceu"
+    await FOREVER;
+with
     #include "tests.ceu"
 with
     loop do
@@ -33,7 +42,7 @@ with
         (idA, idB) = await IN_IDS;
         _ceu_dbg_assert(idA != idB);
 
-        emit OUT_GAME_INI;
+        emit OUT_GAME_INI(idA,idB);
         var u32 ms_game = 0;                            // total game time
 
         var u16 seq;

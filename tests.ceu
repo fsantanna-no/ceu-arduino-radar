@@ -3,65 +3,40 @@ native _MS;
 
 native/pos do
     u32 MS = 0;
-    tceu_callback_ret CB_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
-        tceu_callback_ret ret;
+    tceu_callback_ret CB_TESTS_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
+        tceu_callback_ret ret = { .is_handled=0 };
         if (cmd != CEU_CALLBACK_OUTPUT) {
-            ret.is_handled = 0;
             return ret;
         }
-        ret.is_handled = 1;
         switch (p1.num) {
             case CEU_OUTPUT_GET_TIME:
                 *(*((u32**)p2.ptr)) = MS;
+                ret.is_handled = 1;
                 break;
-
-            case CEU_OUTPUT_OUT_GAME_INI:
-                printf(">>> game\n");
-                break;
-            case CEU_OUTPUT_OUT_GAME_END:
-                printf("<<< game: %d sequences\n", *((u16*)p2.ptr));
-                break;
-            case CEU_OUTPUT_OUT_SEQUENCE_INI:
-                printf("\t>>> sequence %d\n", *((u16*)p2.ptr));
-                break;
-            case CEU_OUTPUT_OUT_SEQUENCE_END: {
-                tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
-                printf("\t<<< sequence %d: %dms\n", ps->_1, ps->_2);
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_FALL:
-                printf("\t!!! fall\n");
-                break;
-            case CEU_OUTPUT_OUT_TOUCH: {
-                tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
-                printf("\t\t[%2d] id=%d %4dms", ps->_1, ps->_2, ps->_3);
-                if (ps->_3 <= ATTACK_THRESHOLD_IN_MS) {
-                    printf("    *");
-                }
-                printf("\n");
-                break;
-            }
-
-            default:
-                ret.is_handled = 0;
         }
         return ret;
     }
-    tceu_callback CB = { &CB_F, NULL };
+    tceu_callback CB_TESTS = { &CB_TESTS_F, NULL };
 end
-{ ceu_callback_register(&CB); }
+{ ceu_callback_register(&CB_TESTS); }
 
 await async do
     emit IN_IDS(1,2);
     loop do
         MS(10000);
-        loop _ in [1->20] do
+        loop _ in [1->10] do
             emit IN_TOUCH(1);
             MS(200);
             emit IN_TOUCH(1);
             MS(200);
             emit IN_TOUCH(2);
             MS(300);
+            emit IN_TOUCH(2);
+            MS(300);
+        end
+        loop _ in [1->10] do
+            emit IN_TOUCH(1);
+            MS(700);
             emit IN_TOUCH(2);
             MS(300);
         end

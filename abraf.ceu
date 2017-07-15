@@ -1,0 +1,128 @@
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
+native/pos do
+    u16 A_IDA, A_IDB;
+    int A_ATAS[65536];
+
+    int TABELA_DE_SEQUENCIAS[50] = {
+        0, 90,90,90,90, 83,83, 76,76, 69,69, 62,62, 55,55, 46,46, 37,37,
+           28,28,19,19, 10,10,  5, 5,  4, 4,  3, 3,  2, 2,  1, 1,  0 };
+
+    int TABELA_DE_INTENSIDADE (int atas) {
+        if (atas < 150) {
+            return 0;
+        } else if (atas < 156) {
+            return 1;
+        } else if (atas < 161) {
+            return 2;
+        } else if (atas < 166) {
+            return 3;
+        } else if (atas < 171) {
+            return 4;
+        } else if (atas < 176) {
+            return 5;
+        } else if (atas < 181) {
+            return 6;
+        } else if (atas < 186) {
+            return 7;
+        } else if (atas < 191) {
+            return 8;
+        } else if (atas < 196) {
+            return 9;
+        } else if (atas < 201) {
+            return 10;
+        } else if (atas < 206) {
+            return 12;
+        } else if (atas < 211) {
+            return 14;
+        } else if (atas < 216) {
+            return 15;
+        } else if (atas < 221) {
+            return 18;
+        } else if (atas < 226) {
+            return 20;
+        } else if (atas < 231) {
+            return 22;
+        } else if (atas < 236) {
+            return 25;
+        } else if (atas < 241) {
+            return 30;
+        } else if (atas < 246) {
+            return 35;
+        } else if (atas < 251) {
+            return 40;
+        } else if (atas < 256) {
+            return 45;
+        } else if (atas < 261) {
+            return 50;
+        } else if (atas < 266) {
+            return 55;
+        } else if (atas < 271) {
+            return 60;
+        } else if (atas < 276) {
+            return 65;
+        } else if (atas < 281) {
+            return 67;
+        } else if (atas < 286) {
+            return 69;
+        } else {
+            return 70;
+        }
+    }
+
+    tceu_callback_ret CB_ABRAF_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
+        tceu_callback_ret ret = { .is_handled=0 };
+        if (cmd != CEU_CALLBACK_OUTPUT) {
+            return ret;
+        }
+        switch (p1.num) {
+            case CEU_OUTPUT_OUT_GAME_INI: {
+                tceu_output_OUT_GAME_INI* ps = (tceu_output_OUT_GAME_INI*) p2.ptr;
+                A_IDA = ps->_1;
+                A_IDB = ps->_2;
+                ceu_dbg_assert(A_IDA<65536 && A_IDB<65536);
+                A_ATAS[A_IDA] = 0;
+                A_ATAS[A_IDB] = 0;
+                break;
+            }
+            case CEU_OUTPUT_OUT_GAME_END: {
+                u16 seqs = *((u16*)p2.ptr);
+                int min = MIN(A_ATAS[A_IDA], A_ATAS[A_IDB]);
+                int max = MAX(A_ATAS[A_IDA], A_ATAS[A_IDB]);
+                float ratio = min/(float)max;
+                int   N_SEQ = (seqs>=35 ? 0 : TABELA_DE_SEQUENCIAS[seqs]);
+                int   N_ATA = min + max;
+                float N_EQU = ratio*N_ATA/4.1;
+                int   N_INT = TABELA_DE_INTENSIDADE(N_ATA);
+                printf("=== ABRAF\n");
+                printf("> Sequência:   %5d => %3d\n", seqs, N_SEQ);
+                printf("> Ataques:   %3d %3d => %3d\n", min, max, N_ATA);
+                printf("> Equilíbrio:  %1.3f =>  %4.3f\n", ratio, N_EQU);
+                printf("> Intensidade: %5d => %3d\n", N_ATA, N_INT);
+                printf("> -----------------------------\n");
+                printf("> TOTAL:             => %3.3f\n", N_SEQ+N_ATA+N_INT+N_EQU+100);
+                break;
+            }
+            case CEU_OUTPUT_OUT_SEQUENCE_INI:
+                break;
+            case CEU_OUTPUT_OUT_SEQUENCE_END: {
+                break;
+            }
+            case CEU_OUTPUT_OUT_SEQUENCE_FALL:
+                break;
+            case CEU_OUTPUT_OUT_TOUCH: {
+                tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
+                u16 id = ps->_2;
+                u32 dt = ps->_3;
+                if (dt <= ATTACK_THRESHOLD_IN_MS) {
+                    A_ATAS[id]++;
+                }
+                break;
+            }
+        }
+        return ret;
+    }
+    tceu_callback CB_ABRAF = { &CB_ABRAF_F, NULL };
+end
+{ ceu_callback_register(&CB_ABRAF); }
