@@ -52,7 +52,7 @@ with
 
         var u16 seq;
         loop seq in [1 -> _[ do
-            var[3*] u32 ms;
+            var[99] u32 ms;
 
             emit OUT_SEQUENCE_INI(seq);
             do finalize with

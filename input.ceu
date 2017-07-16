@@ -7,9 +7,25 @@ native/pos do
     ##define radio_read(a,b) radio.read(a,b)
     const uint64_t pipe =  0xE8E8F0F0E1LL;
     RF24 radio(8,7);
+
+    tceu_callback_ret CB_INPUT_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
+        tceu_callback_ret ret = { .is_handled=0 };
+        if (cmd != CEU_CALLBACK_OUTPUT) {
+            return ret;
+        }
+        switch (p1.num) {
+            case CEU_OUTPUT_GET_TIME:
+                *(*((u32**)p2.ptr)) = millis();
+                ret.is_handled = 1;
+                break;
+        }
+        return ret;
+    }
+    tceu_callback CB_INPUT = { &CB_INPUT_F, NULL };
 end
 
 { 
+    ceu_callback_register(&CB_INPUT);
     radio.begin();
     radio.setAutoAck(false);
     radio.setDataRate(RF24_250KBPS);
@@ -40,9 +56,9 @@ await async do
         if _radio.available() as bool then
             var u8 v = _;
             _radio_read(&&v, 1);
+            {Serial.print("read: ");}
             {Serial.println(@v);}
             emit IN_TOUCH(v);
-            {Serial.println("ok");}
         end
     end
 end

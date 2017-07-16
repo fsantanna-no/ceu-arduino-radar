@@ -2,11 +2,13 @@
 
 #define ID 1
 
+#define PIN_LED(x) PIN_02(x);
 #define PIN_VIB PIN_03;
 #define PIN_MIC PIN_04;
 
-input bool PIN_03;      // VIB
-input bool PIN_04;      // MIC
+output bool PIN_02;
+input  bool PIN_03;      // VIB
+input  bool PIN_04;      // MIC
 
 native _radio;
 native/nohold _radio_write;
@@ -30,7 +32,7 @@ code/await Vib_Mic (void) -> void do
     loop do
         par/or do
             par/and do
-                //await PIN_VIB;
+                await PIN_VIB;
             with
                 await PIN_MIC;
             end
@@ -50,8 +52,10 @@ _Serial.begin(9600);
 var u8 id = ID;
 loop do
     await Vib_Mic();
+    emit PIN_LED(true);
     _Serial.println(id);
     _radio_write(&&id, 1);
     id = 3-id;
     await 200ms;
+    emit PIN_LED(false);
 end
