@@ -7,38 +7,43 @@
         - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
 #endif
 
-#define MS_TO_GAME              (5*60*1000)     // 5 minutes
+#define MS_TO_GAME              {300000LL}      // 5 minutes
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
 
-input  (u16,u16)     IN_IDS;
-input  u16           IN_TOUCH;
+input  (u8,u8)       IN_IDS;
+input  u8            IN_TOUCH;
 
 output &u32          GET_TIME;
 
-output (u16,u16)     OUT_GAME_INI;          // idA, idB
+output (u8,u8)       OUT_GAME_INI;          // idA, idB
 output u16           OUT_GAME_END;          // #seqs
 output u16           OUT_SEQUENCE_INI;      // seq
 output (u16,u32)     OUT_SEQUENCE_END;      // seq, dt
 output u16           OUT_SEQUENCE_FALL;     // seq
-output (u16,u16,u32) OUT_TOUCH;             // touch, id, dt
+output (u16,u8,u32)  OUT_TOUCH;             // touch, id, dt
 
 par/or do
-    #include "abraf.ceu"
+    //#include "abraf.ceu"
     await FOREVER;
 with
-    #include "media.ceu"
+    //#include "media.ceu"
     await FOREVER;
 with
-    //#include "debug.ceu"
+    #include "debug.ceu"
     await FOREVER;
 with
-    #include "tests.ceu"
+    #if 0
+        #include "tests.ceu"
+    #else
+        #include "input.ceu"
+        await FOREVER;
+    #endif
 with
     loop do
-        var u16 idA;
-        var u16 idB;
+        var u8 idA;
+        var u8 idB;
         (idA, idB) = await IN_IDS;
         _ceu_dbg_assert(idA != idB);
 
@@ -47,7 +52,7 @@ with
 
         var u16 seq;
         loop seq in [1 -> _[ do
-            var[] u32 ms;
+            var[3*] u32 ms;
 
             emit OUT_SEQUENCE_INI(seq);
             do finalize with
@@ -62,7 +67,7 @@ with
                 ms_game = ms_game + dt;
             end
 
-            var u16 id1 = await IN_TOUCH;               // start counting after 0th touch
+            var u8 id1 = await IN_TOUCH;                // start counting after 0th touch
             _ceu_dbg_assert(id1==idA or id1==idB);
 
             do
@@ -83,7 +88,7 @@ with
                         await (MS_TO_FALL)ms;
                         break;
                     with                                // alternate touches between idA/idB
-                        var u16 id2 = await IN_TOUCH until (id2 != id1);
+                        var u8 id2 = await IN_TOUCH until (id2 != id1);
                         _ceu_dbg_assert(id1==idA or id1==idB);
                         do
                             var u32 now = _;

@@ -1,0 +1,48 @@
+native _radio;
+native/nohold _radio_read;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+    ##define radio_read(a,b) radio.read(a,b)
+    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    RF24 radio(8,7);
+end
+
+{ 
+    radio.begin();
+    radio.setAutoAck(false);
+    radio.setDataRate(RF24_250KBPS);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+}
+
+// emit IN_IDS(idA, idB);
+await async do
+    var u8? idA;
+    loop do
+        if _radio.available() as bool then
+            var u8 v = _;
+            _radio_read(&&v, 1);
+            if not idA? then
+                idA = v;
+            else/if v != idA! then
+                emit IN_IDS(idA!, v);
+                break;
+            end
+        end
+    end
+end
+
+// emit IN_TOUCH(id);
+await async do
+    loop do
+        if _radio.available() as bool then
+            var u8 v = _;
+            _radio_read(&&v, 1);
+            {Serial.println(@v);}
+            emit IN_TOUCH(v);
+            {Serial.println("ok");}
+        end
+    end
+end

@@ -1,0 +1,57 @@
+#include "arduino/arduino.ceu"
+
+#define ID 1
+
+#define PIN_VIB PIN_03;
+#define PIN_MIC PIN_04;
+
+input bool PIN_03;      // VIB
+input bool PIN_04;      // MIC
+
+native _radio;
+native/nohold _radio_write;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+    ##define radio_write(a,b) radio.write(a,b)
+    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    RF24 radio(8,7);
+end
+
+{ 
+    radio.begin();
+    radio.setAutoAck(false);
+    radio.setDataRate(RF24_250KBPS);
+    radio.openWritingPipe(pipe);
+}
+
+code/await Vib_Mic (void) -> void do
+    loop do
+        par/or do
+            par/and do
+                //await PIN_VIB;
+            with
+                await PIN_MIC;
+            end
+            escape;
+        with
+            par/or do
+                await PIN_VIB;
+            with
+                await PIN_MIC;
+            end
+            await 100ms;
+        end
+    end
+end
+
+_Serial.begin(9600);
+var u8 id = ID;
+loop do
+    await Vib_Mic();
+    _Serial.println(id);
+    _radio_write(&&id, 1);
+    id = 3-id;
+    await 200ms;
+end

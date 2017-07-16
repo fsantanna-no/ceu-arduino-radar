@@ -1,0 +1,11 @@
+#include "arduino/arduino.ceu"
+
+input  bool PIN_03;
+output bool PIN_13;
+
+loop do
+    var bool on = await PIN_03 until on;
+    emit PIN_13(true);
+    await 1s;
+    emit PIN_13(false);
+end

@@ -1,0 +1,31 @@
+#include "arduino/arduino.ceu"
+
+native _radio;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+
+    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    byte V = 0;
+    RF24 radio(8,7);
+end
+
+{ 
+    Serial.begin(9600);
+    radio.begin();
+    radio.setAutoAck(false);
+    radio.setDataRate(RF24_250KBPS);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+}
+
+await async do
+    loop do
+        if {radio.available()} as bool then
+            var byte v = _;
+            { radio.read(@(&&v), 1); }
+            _Serial.println(v);
+        end
+    end
+end

@@ -1,0 +1,24 @@
+native _radio;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+
+    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    byte V = 0;
+    RF24 radio(8,7);
+end
+
+{ 
+    radio.begin();
+    radio.setAutoAck(false);
+    radio.setDataRate(RF24_250KBPS);
+    radio.openWritingPipe(pipe);
+}
+
+every 1s do
+    {
+        radio.write(&V, 1);
+        V++;
+    }
+end
