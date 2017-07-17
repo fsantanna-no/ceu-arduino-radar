@@ -1,5 +1,3 @@
-input byte SERIAL;
-
 native/pos do
     tceu_callback_ret CB_DEBUG_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
         tceu_callback_ret ret = { .is_handled=0 };

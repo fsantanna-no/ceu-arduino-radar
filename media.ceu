@@ -1,5 +1,3 @@
-input byte SERIAL;
-
 native/pos do
     u8  M_IDA, M_IDB;
     int M_ATAS[2];

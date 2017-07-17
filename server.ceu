@@ -23,6 +23,8 @@ output (u16,u32)     OUT_SEQUENCE_END;      // seq, dt
 output u16           OUT_SEQUENCE_FALL;     // seq
 output (u16,u8,u32)  OUT_TOUCH;             // touch, id, dt
 
+input byte SERIAL;
+
 par/or do
     //#include "abraf.ceu"
     await FOREVER;
@@ -49,13 +51,14 @@ with
 
         var u16 seq;
         loop seq in [1 -> _[ do
-            var[99] u32 ms;
+            var[2*] u32 ms;
+            var u32 ms_0 = _;
 
             emit OUT_SEQUENCE_INI(seq);
             do finalize with
                 var u32 dt = do
                     if $ms >= 2 then
-                        escape ms[$ms-1] - ms[0];       // ms difference between last and 0th touch
+                        escape ms[$ms-1] - ms_0;        // ms difference between last and 0th touch
                     else
                         escape 0;
                     end
@@ -71,6 +74,7 @@ with
                 var u32 now = _;
                 emit GET_TIME(&now);
                 ms = ms .. [now];
+                ms_0 = now;
                 emit OUT_TOUCH(0, id1, -1);
             end
 
@@ -94,6 +98,7 @@ with
                         end
                         emit OUT_TOUCH(touch, id1, ms[$ms-1]-ms[$ms-2]);
                         id1 = id2;
+                        $ms = $ms - 1;
                     end
                 end
                 emit OUT_SEQUENCE_FALL(seq);
