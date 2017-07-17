@@ -7,12 +7,11 @@
         - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
 #endif
 
-#define MS_TO_GAME              {300000LL}      // 5 minutes
+#define MS_TO_GAME              {30000LL}      // 5 minutes
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
 
-input  (u8,u8)       IN_IDS;
 input  u8            IN_TOUCH;
 
 output &u32          GET_TIME;
@@ -28,10 +27,10 @@ par/or do
     //#include "abraf.ceu"
     await FOREVER;
 with
-    //#include "media.ceu"
+    #include "media.ceu"
     await FOREVER;
 with
-    #include "debug.ceu"
+    //#include "debug.ceu"
     await FOREVER;
 with
     #if 0
@@ -42,10 +41,8 @@ with
     #endif
 with
     loop do
-        var u8 idA;
-        var u8 idB;
-        (idA, idB) = await IN_IDS;
-        _ceu_dbg_assert(idA != idB);
+        var u8 idA = await IN_TOUCH;
+        var u8 idB = await IN_TOUCH until (idA != idB);
 
         emit OUT_GAME_INI(idA,idB);
         var u32 ms_game = 0;                            // total game time

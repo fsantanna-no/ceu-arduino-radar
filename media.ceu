@@ -1,6 +1,8 @@
+input byte SERIAL;
+
 native/pos do
-    u16 M_IDA, M_IDB;
-    int M_ATAS[65536];
+    u8  M_IDA, M_IDB;
+    int M_ATAS[2];
 
     int M_TOTAL, M_PAR;
 
@@ -14,11 +16,11 @@ native/pos do
                 tceu_output_OUT_GAME_INI* ps = (tceu_output_OUT_GAME_INI*) p2.ptr;
                 M_IDA = ps->_1;
                 M_IDB = ps->_2;
-                ceu_dbg_assert(M_IDA<65536 && M_IDB<65536);
                 break;
             }
             case CEU_OUTPUT_OUT_SEQUENCE_INI: {
-                printf("===============================================================\n");
+                //printf("===============================================================\n");
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"===============================================================\r\n");
                 M_ATAS[M_IDA] = 0;
                 M_ATAS[M_IDB] = 0;
                 M_TOTAL = M_PAR = 0;
@@ -27,8 +29,8 @@ native/pos do
             case CEU_OUTPUT_OUT_TOUCH: {
                 tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
                 int touch = ps->_1;
-                u16 id = ps->_2;
-                u16 ms = ps->_3;
+                u8  id    = ps->_2;
+                u32 ms    = ps->_3;
                 if (ms <= ATTACK_THRESHOLD_IN_MS) {
                     M_ATAS[id]++;
                 }
@@ -38,8 +40,21 @@ native/pos do
                     if (touch%2 == 0) {
                         M_TOTAL += cur;
                         M_PAR++;
-                        printf("> [%3d] MS/PAR: %4d atual | %4d acumulado || ATAS: %2d/%2d=>%3d\n",
-                            touch, cur, M_TOTAL/M_PAR, M_ATAS[M_IDA], M_ATAS[M_IDB], M_ATAS[M_IDA]+M_ATAS[M_IDB]);
+                        //printf("> [%3d] MS/PAR: %4d atual | %4d acumulado || ATAS: %2d/%2d=>%3d\n",
+                            //touch, cur, M_TOTAL/M_PAR, M_ATAS[M_IDA], M_ATAS[M_IDB], M_ATAS[M_IDA]+M_ATAS[M_IDB]);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"> [");
+                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, touch);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"] MS/PAR: ");
+                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, cur);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" atual | ");
+                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_TOTAL/M_PAR);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" acumulado || ATAS: ");
+                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"/");
+                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDB]);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=>");
+                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]+M_ATAS[M_IDB]);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
                         cur = 0;
                     }
                 } else {

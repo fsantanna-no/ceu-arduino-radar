@@ -32,7 +32,7 @@ code/await Vib_Mic (void) -> void do
     loop do
         par/or do
             par/and do
-                await PIN_VIB;
+                //await PIN_VIB;
             with
                 await PIN_MIC;
             end
@@ -55,7 +55,7 @@ loop do
     emit PIN_LED(true);
     _Serial.println(id);
     _radio_write(&&id, 1);
-    id = 3-id;
+    id = 1-id;
     await 200ms;
     emit PIN_LED(false);
 end
