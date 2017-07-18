@@ -119,6 +119,7 @@ with
                         do
                             var u32 now = _;
                             emit GET_TIME(&now);
+                            $ms = $ms - 1;
                             ms = ms .. [now];
                         end
                         var u32 dt = ms[$ms-1]-ms[$ms-2];
@@ -129,7 +130,6 @@ with
                             spawn Tone(true,1) in tones;
                         end
                         id1 = id2;
-                        $ms = $ms - 1;
                     end
                 end
                 emit OUT_SEQUENCE_FALL(seq);

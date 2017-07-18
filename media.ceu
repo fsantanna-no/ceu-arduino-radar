@@ -17,11 +17,21 @@ native/pos do
                 break;
             }
             case CEU_OUTPUT_OUT_SEQUENCE_INI: {
-                //printf("===============================================================\n");
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"===\r\n");
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)">>> ");
+                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, *((u16*)p2.ptr));
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
                 M_ATAS[M_IDA] = 0;
                 M_ATAS[M_IDB] = 0;
                 M_TOTAL = M_PAR = 0;
+                break;
+            }
+            case CEU_OUTPUT_OUT_SEQUENCE_END: {
+                tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"<<< ");
+                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, ps->_1);
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)": ");
+                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (s32)ps->_2);
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"ms\r\n");
                 break;
             }
             case CEU_OUTPUT_OUT_TOUCH: {
