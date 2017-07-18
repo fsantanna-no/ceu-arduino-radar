@@ -27,7 +27,7 @@ spawn do
     await async do
         emit IN_TOUCH(0);
         emit IN_TOUCH(1);
-        loop do
+        //loop do
             MS(10000);
             loop _ in [1->10] do
                 emit IN_TOUCH(0);
@@ -46,6 +46,6 @@ spawn do
                 MS(300);
             end
             MS(3000);
-        end
+        //end
     end
 end

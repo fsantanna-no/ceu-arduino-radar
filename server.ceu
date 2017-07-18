@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include "c.ceu"
 
 #if 0
@@ -33,16 +33,20 @@ output bool PIN_03;
 #include "tests.ceu"
 #else
 #include "tone.ceu"
+#include "input.ceu"
 #endif
 
 par do
     #include "abraf.ceu"
     await FOREVER;
 with
+    //#include "chico.ceu"
+    await FOREVER;
+with
     #include "media.ceu"
     await FOREVER;
 with
-    //#include "debug.ceu"
+    #include "debug.ceu"
     await FOREVER;
 with
     loop do
@@ -73,7 +77,7 @@ with
             end
 
             var u8 id1 = await IN_TOUCH;                // start counting after 0th touch
-            emit OUT_TOUCH(0, id1, -1);
+            //emit OUT_TOUCH(0, id1, -1);
             spawn Tone(true,1) in tones;
 
             do

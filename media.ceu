@@ -43,28 +43,27 @@ native/pos do
                     M_ATAS[id]++;
                 }
                 static int cur = 0;
-                if (touch > 0) {
-                    cur += ms;
-                    if (touch%2 == 0) {
-                        M_TOTAL += cur;
-                        M_PAR++;
-                        //printf("> [%3d] MS/PAR: %4d atual | %4d acumulado || ATAS: %2d/%2d=>%3d\n",
-                            //touch, cur, M_TOTAL/M_PAR, M_ATAS[M_IDA], M_ATAS[M_IDB], M_ATAS[M_IDA]+M_ATAS[M_IDB]);
-                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, touch);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" | ");
-                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, cur);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" / ");
-                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_TOTAL/M_PAR);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" | ");
-                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"+");
-                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDB]);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=");
-                        ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]+M_ATAS[M_IDB]);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
-                        cur = 0;
-                    }
-                } else {
+                if (touch == 1) {
+                    cur = 0;
+                }
+                cur += ms;
+                if (touch%2 == 0) {
+                    M_TOTAL += cur;
+                    M_PAR++;
+                    //printf("> [%3d] MS/PAR: %4d atual | %4d acumulado || ATAS: %2d/%2d=>%3d\n",
+                        //touch, cur, M_TOTAL/M_PAR, M_ATAS[M_IDA], M_ATAS[M_IDB], M_ATAS[M_IDA]+M_ATAS[M_IDB]);
+                    ceu_callback_num_num(CEU_CALLBACK_LOG, 2, touch);
+                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" | ");
+                    ceu_callback_num_num(CEU_CALLBACK_LOG, 2, cur);
+                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" / ");
+                    ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_TOTAL/M_PAR);
+                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" | ");
+                    ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]);
+                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"+");
+                    ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDB]);
+                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=");
+                    ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]+M_ATAS[M_IDB]);
+                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
                     cur = 0;
                 }
                 break;

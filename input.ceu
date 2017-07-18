@@ -33,15 +33,16 @@ end
     radio.startListening();
 }
 
-// emit IN_TOUCH(id);
-await async do
-    loop do
-        if _radio.available() as bool then
-            var u8 v = _;
-            _radio_read(&&v, 1);
-            //{Serial.print("read: ");}
-            //{Serial.println(@v);}
-            emit IN_TOUCH(v);
+spawn do
+    await async do
+        loop do
+            if _radio.available() as bool then
+                var u8 v = _;
+                _radio_read(&&v, 1);
+                //{Serial.print("read: ");}
+                //{Serial.println(@v);}
+                emit IN_TOUCH(v);
+            end
         end
     end
 end
