@@ -1,14 +1,14 @@
 #include "arduino/arduino.ceu"
 
-#define ID 1
+#define PIN_LED(x) PIN_02(x)
+#define PIN_VIB PIN_03
+#define PIN_MIC PIN_04
+#define PIN_ID  6
 
-#define PIN_LED(x) PIN_02(x);
-#define PIN_VIB PIN_03;
-#define PIN_MIC PIN_04;
-
-output bool PIN_02;
-input  bool PIN_03;      // VIB
-input  bool PIN_04;      // MIC
+output bool PIN_02;     // LED
+input  bool PIN_03;     // VIB
+input  bool PIN_04;     // MIC
+input  bool PIN_06;     // ID
 
 native _radio;
 native/nohold _radio_write;
@@ -32,24 +32,33 @@ code/await Vib_Mic (void) -> void do
     loop do
         par/or do
             par/and do
-                //await PIN_VIB;
+                await PIN_VIB;
             with
                 await PIN_MIC;
             end
             escape;
         with
-            par/or do
-                await PIN_VIB;
-            with
-                await PIN_MIC;
-            end
+            var bool is_vib = do
+                par do
+                    await PIN_VIB;
+                    escape true;
+                with
+                    await PIN_MIC;
+                    escape false;
+                end
+            end;
             await 100ms;
+            if is_vib then
+                _Serial.println("no mic");
+            else
+                _Serial.println("no vib");
+            end
         end
     end
 end
 
 _Serial.begin(9600);
-var u8 id = ID;
+var u8 id = _digitalRead(PIN_ID);
 loop do
     await Vib_Mic();
     emit PIN_LED(true);

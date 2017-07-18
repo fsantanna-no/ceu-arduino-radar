@@ -39,8 +39,8 @@ await async do
         if _radio.available() as bool then
             var u8 v = _;
             _radio_read(&&v, 1);
-            {Serial.print("read: ");}
-            {Serial.println(@v);}
+            //{Serial.print("read: ");}
+            //{Serial.println(@v);}
             emit IN_TOUCH(v);
         end
     end

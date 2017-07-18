@@ -18,7 +18,7 @@ native/pos do
             }
             case CEU_OUTPUT_OUT_SEQUENCE_INI: {
                 //printf("===============================================================\n");
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"===============================================================\r\n");
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"===\r\n");
                 M_ATAS[M_IDA] = 0;
                 M_ATAS[M_IDB] = 0;
                 M_TOTAL = M_PAR = 0;
@@ -40,17 +40,16 @@ native/pos do
                         M_PAR++;
                         //printf("> [%3d] MS/PAR: %4d atual | %4d acumulado || ATAS: %2d/%2d=>%3d\n",
                             //touch, cur, M_TOTAL/M_PAR, M_ATAS[M_IDA], M_ATAS[M_IDB], M_ATAS[M_IDA]+M_ATAS[M_IDB]);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"> [");
                         ceu_callback_num_num(CEU_CALLBACK_LOG, 2, touch);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"] MS/PAR: ");
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" | ");
                         ceu_callback_num_num(CEU_CALLBACK_LOG, 2, cur);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" atual | ");
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" / ");
                         ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_TOTAL/M_PAR);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" acumulado || ATAS: ");
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" | ");
                         ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"/");
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"+");
                         ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDB]);
-                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=>");
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=");
                         ceu_callback_num_num(CEU_CALLBACK_LOG, 2, M_ATAS[M_IDA]+M_ATAS[M_IDB]);
                         ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
                         cur = 0;

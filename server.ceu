@@ -7,7 +7,8 @@
         - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
 #endif
 
-#define MS_TO_GAME              {30000LL}      // 5 minutes
+#define MS_TO_GAME              {30000LL}       // 30 seconds
+//#define MS_TO_GAME              {300000LL}      // 5 minutes
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
@@ -25,8 +26,28 @@ output (u16,u8,u32)  OUT_TOUCH;             // touch, id, dt
 
 input byte SERIAL;
 
+output bool PIN_03;
+
+#include "arduino/arduino.ceu"
+
+code/await Tone (var bool inc, var int i) -> void do
+    do finalize with
+        _noTone(3);
+    end
+    loop i in [1 -> i] do
+        if inc then
+            _tone(3,1000+i*100);
+        else
+            _tone(3,1000-i*100);
+        end
+        await 50ms;
+        _noTone(3);
+        await 50ms;
+    end
+end
+
 par/or do
-    //#include "abraf.ceu"
+    #include "abraf.ceu"
     await FOREVER;
 with
     #include "media.ceu"
@@ -47,7 +68,10 @@ with
         var u8 idB = await IN_TOUCH until (idA != idB);
 
         emit OUT_GAME_INI(idA,idB);
+        spawn Tone(true,10);
         var u32 ms_game = 0;                            // total game time
+
+        pool[2] Tone tones;
 
         var u16 seq;
         loop seq in [1 -> _[ do
@@ -77,6 +101,7 @@ with
                 ms_0 = now;
                 emit OUT_TOUCH(0, id1, -1);
             end
+            spawn Tone(true,1) in tones;
 
             par/or do                                   // TRACK TOTAL GAME TIME
                 _ceu_dbg_assert(ms_game < MS_TO_GAME);
@@ -96,16 +121,25 @@ with
                             emit GET_TIME(&now);
                             ms = ms .. [now];
                         end
-                        emit OUT_TOUCH(touch, id1, ms[$ms-1]-ms[$ms-2]);
+                        var u32 dt = ms[$ms-1]-ms[$ms-2];
+                        emit OUT_TOUCH(touch, id1, dt);
+                        if dt > ATTACK_THRESHOLD_IN_MS then
+                            spawn Tone(true,1) in tones;
+                        else
+                            spawn Tone(true,2) in tones;
+                        end
                         id1 = id2;
                         $ms = $ms - 1;
                     end
                 end
                 emit OUT_SEQUENCE_FALL(seq);
+                spawn Tone(false,5) in tones;
             end
         end
 
         emit OUT_GAME_END(seq);
+        spawn Tone(false,10) in tones;
+        await 5s;
     end
 end
 
