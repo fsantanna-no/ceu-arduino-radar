@@ -1,0 +1,17 @@
+#include "arduino/arduino.ceu"
+
+code/await Tone (var bool inc, var int i) -> void do
+    do finalize with
+        _noTone(3);
+    end
+    loop i in [1 -> i] do
+        if inc then
+            _tone(3,1000+i*100);
+        else
+            _tone(3,1000-i*100);
+        end
+        await 50ms;
+        _noTone(3);
+        await 50ms;
+    end
+end

@@ -20,26 +20,32 @@ native/pos do
 end
 { ceu_callback_register(&CB_TESTS); }
 
-await async do
-    emit IN_IDS(1,2);
-    loop do
-        MS(10000);
-        loop _ in [1->10] do
-            emit IN_TOUCH(1);
-            MS(200);
-            emit IN_TOUCH(1);
-            MS(200);
-            emit IN_TOUCH(2);
-            MS(300);
-            emit IN_TOUCH(2);
-            MS(300);
+code/await Tone (var bool inc, var int i) -> void do
+end
+
+spawn do
+    await async do
+        emit IN_TOUCH(0);
+        emit IN_TOUCH(1);
+        loop do
+            MS(10000);
+            loop _ in [1->10] do
+                emit IN_TOUCH(0);
+                MS(200);
+                emit IN_TOUCH(0);
+                MS(200);
+                emit IN_TOUCH(1);
+                MS(300);
+                emit IN_TOUCH(1);
+                MS(300);
+            end
+            loop _ in [1->10] do
+                emit IN_TOUCH(0);
+                MS(700);
+                emit IN_TOUCH(1);
+                MS(300);
+            end
+            MS(3000);
         end
-        loop _ in [1->10] do
-            emit IN_TOUCH(1);
-            MS(700);
-            emit IN_TOUCH(2);
-            MS(300);
-        end
-        MS(3000);
     end
 end
