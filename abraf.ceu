@@ -95,7 +95,6 @@ native/pos do
                 float N_EQU = ratio*N_ATA/4.1;
                 int   N_INT = TABELA_DE_INTENSIDADE(N_ATA);
                 //printf("=== ABRAF\n");
-#if 0
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=== ABRAF\r\n");
                 //printf("> Sequência:   %5d => %3d\n", seqs, N_SEQ);
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"Sequências: ");
@@ -128,7 +127,6 @@ native/pos do
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"TOTAL: ");
                 ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (int)(N_SEQ+N_ATA+N_INT+N_EQU+100));
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
-#endif
                 break;
             }
             case CEU_OUTPUT_OUT_SEQUENCE_INI:

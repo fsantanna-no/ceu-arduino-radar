@@ -57,14 +57,23 @@ code/await Vib_Mic (void) -> void do
     end
 end
 
+code/await Led (void) -> void do
+    emit PIN_LED(true);
+    do finalize with
+        emit PIN_LED(false);
+    end
+    await 500ms;
+end
+
+pool[2] Led leds;
+
 _Serial.begin(9600);
 var u8 id = _digitalRead(PIN_ID);
 loop do
     await Vib_Mic();
-    emit PIN_LED(true);
+    spawn Led() in leds;
     _Serial.println(id);
     _radio_write(&&id, 1);
     id = 1-id;
     await 200ms;
-    emit PIN_LED(false);
 end

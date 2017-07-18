@@ -69,20 +69,20 @@ with
 
         emit OUT_GAME_INI(idA,idB);
         spawn Tone(true,10);
-        var u32 ms_game = 0;                            // total game time
+        var u32  ms_game = 0;                            // total game time
+        var u32? ms_0 = _;
 
         pool[2] Tone tones;
 
         var u16 seq;
         loop seq in [1 -> _[ do
             var[2*] u32 ms;
-            var u32 ms_0 = _;
 
             emit OUT_SEQUENCE_INI(seq);
             do finalize with
                 var u32 dt = do
                     if $ms >= 2 then
-                        escape ms[$ms-1] - ms_0;        // ms difference between last and 0th touch
+                        escape ms[$ms-1] - ms_0!;       // ms difference between last and 0th touch
                     else
                         escape 0;
                     end
@@ -92,16 +92,17 @@ with
             end
 
             var u8 id1 = await IN_TOUCH;                // start counting after 0th touch
-            _ceu_dbg_assert(id1==idA or id1==idB);
+            emit OUT_TOUCH(0, id1, -1);
+            spawn Tone(true,1) in tones;
 
             do
                 var u32 now = _;
                 emit GET_TIME(&now);
                 ms = ms .. [now];
-                ms_0 = now;
-                emit OUT_TOUCH(0, id1, -1);
+                if not ms_0? then
+                    ms_0 = now;
+                end
             end
-            spawn Tone(true,1) in tones;
 
             par/or do                                   // TRACK TOTAL GAME TIME
                 _ceu_dbg_assert(ms_game < MS_TO_GAME);
@@ -115,7 +116,6 @@ with
                         break;
                     with                                // alternate touches between idA/idB
                         var u8 id2 = await IN_TOUCH until (id2 != id1);
-                        _ceu_dbg_assert(id1==idA or id1==idB);
                         do
                             var u32 now = _;
                             emit GET_TIME(&now);
@@ -123,10 +123,10 @@ with
                         end
                         var u32 dt = ms[$ms-1]-ms[$ms-2];
                         emit OUT_TOUCH(touch, id1, dt);
-                        if dt > ATTACK_THRESHOLD_IN_MS then
-                            spawn Tone(true,1) in tones;
-                        else
+                        if dt <= ATTACK_THRESHOLD_IN_MS then
                             spawn Tone(true,2) in tones;
+                        else
+                            spawn Tone(true,1) in tones;
                         end
                         id1 = id2;
                         $ms = $ms - 1;
