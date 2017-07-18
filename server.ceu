@@ -69,26 +69,25 @@ with
 
         emit OUT_GAME_INI(idA,idB);
         spawn Tone(true,10);
-        var u32  ms_game = 0;                            // total game time
-        var u32? ms_0 = _;
+        var u32 ms_game = 0;                            // total game time
 
         pool[2] Tone tones;
 
         var u16 seq;
         loop seq in [1 -> _[ do
             var[2*] u32 ms;
+            var u32 ms_0 = _;
 
             emit OUT_SEQUENCE_INI(seq);
             do finalize with
                 var u32 dt = do
                     if $ms >= 2 then
-                        escape ms[$ms-1] - ms_0!;       // ms difference between last and 0th touch
+                        escape ms[$ms-1] - ms_0;        // ms difference between last and 0th touch
                     else
                         escape 0;
                     end
                 end;
                 emit OUT_SEQUENCE_END(seq,dt);
-                ms_game = ms_game + dt;
             end
 
             var u8 id1 = await IN_TOUCH;                // start counting after 0th touch
@@ -99,42 +98,42 @@ with
                 var u32 now = _;
                 emit GET_TIME(&now);
                 ms = ms .. [now];
-                if not ms_0? then
-                    ms_0 = now;
+                ms_0 = now;
+            end
+
+            var u16 touch;
+            loop touch in [1 -> _[ do                   // TRACK TOUCHES
+                par/or do                               // track fall
+                    await (MS_TO_FALL)ms;
+                    break;
+                with                                    // alternate touches between idA/idB
+                    var u8 id2 = await IN_TOUCH until (id2 != id1);
+                    do
+                        var u32 now = _;
+                        emit GET_TIME(&now);
+                        if $ms == $$ms then
+                            $ms = $ms - 1;
+                        end
+                        ms = ms .. [now];
+                    end
+                    var u32 dt = ms[$ms-1]-ms[$ms-2];
+                    emit OUT_TOUCH(touch, id1, dt);
+                    if dt <= ATTACK_THRESHOLD_IN_MS then
+                        spawn Tone(true,2) in tones;
+                    else
+                        spawn Tone(true,1) in tones;
+                    end
+                    id1 = id2;
+
+                    ms_game = ms_game + dt;
+                    if ms_game >= MS_TO_GAME then       // CHECK TOTAL GAME TIME
+                        break/seq;
+                    end
                 end
             end
 
-            par/or do                                   // TRACK TOTAL GAME TIME
-                _ceu_dbg_assert(ms_game < MS_TO_GAME);
-                await (MS_TO_GAME-ms_game+1)ms;           // time left
-                break/seq;
-            with                                        // TRACK TOUCHES
-                var u16 touch;
-                loop touch in [1 -> _[ do
-                    par/or do                           // track fall
-                        await (MS_TO_FALL)ms;
-                        break;
-                    with                                // alternate touches between idA/idB
-                        var u8 id2 = await IN_TOUCH until (id2 != id1);
-                        do
-                            var u32 now = _;
-                            emit GET_TIME(&now);
-                            $ms = $ms - 1;
-                            ms = ms .. [now];
-                        end
-                        var u32 dt = ms[$ms-1]-ms[$ms-2];
-                        emit OUT_TOUCH(touch, id1, dt);
-                        if dt <= ATTACK_THRESHOLD_IN_MS then
-                            spawn Tone(true,2) in tones;
-                        else
-                            spawn Tone(true,1) in tones;
-                        end
-                        id1 = id2;
-                    end
-                end
-                emit OUT_SEQUENCE_FALL(seq);
-                spawn Tone(false,5) in tones;
-            end
+            emit OUT_SEQUENCE_FALL(seq);
+            spawn Tone(false,5) in tones;
         end
 
         emit OUT_GAME_END(seq);

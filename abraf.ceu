@@ -112,7 +112,7 @@ native/pos do
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
                 //printf("> Equilíbrio:  %1.3f =>  %4.3f\n", ratio, N_EQU);
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"Equilíbrio: ");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (int)ratio*100);
+                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (int)(ratio*100));
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" => ");
                 ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (int)N_EQU);
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
