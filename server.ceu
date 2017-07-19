@@ -38,16 +38,16 @@ output bool PIN_03;
 #endif
 
 par do
-    //#include "abraf.ceu"
+    #include "abraf.ceu"
     await FOREVER;
 with
-    //#include "chico.ceu"
+    #include "chico.ceu"
     await FOREVER;
 with
     #include "media.ceu"
     await FOREVER;
 with
-    //#include "debug.ceu"
+    #include "debug.ceu"
     await FOREVER;
 with
     loop do

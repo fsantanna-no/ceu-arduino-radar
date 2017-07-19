@@ -30,8 +30,11 @@ native/pos do
         }
         switch (p1.num) {
             case CEU_OUTPUT_OUT_GAME_INI: {
-                tceu_output_OUT_GAME_INI* ps = (tceu_output_OUT_GAME_INI*) p2.ptr;
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"===\r\n");
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)">>>\r\n");
+                break;
+            }
+            case CEU_OUTPUT_OUT_GAME_END: {
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"<<<\r\n");
                 break;
             }
             case CEU_OUTPUT_OUT_SEQUENCE_INI: {
@@ -104,8 +107,8 @@ native/pos do
 
                     char str[128];
                     snprintf(str, 128, "- vel: %4d/%4d | pot: %4d/%4d | equ: %4d/%4d\r\n",
-                                       (u32)vel, (u32)ms2pts(vel), (u32)pot, (u32)ms2pts(pot),
-                                       (u32)equ, (u32)ms2pts(equ));
+                                       (u16)vel, (u16)ms2pts(vel), (u16)pot, (u16)ms2pts(pot),
+                                       (u16)equ, (u16)ms2pts(equ));
                     ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 }
 
@@ -123,8 +126,8 @@ native/pos do
 
                     char str[128];
                     snprintf(str, 128, "+ vel: %4d/%4d | pot: %4d/%4d | equ: %4d/%4d/%4d | seq: %2d\r\n",
-                                       (u32)vel, (u32)ms2pts(vel), (u32)pot, (u32)ms2pts(pot),
-                                       (u32)equ, (u32)ms2pts(equ), (u32)EQU, falls+1);
+                                       (u16)vel, (u16)ms2pts(vel), (u16)pot, (u16)ms2pts(pot),
+                                       (u16)equ, (u16)ms2pts(equ), (u16)EQU, falls+1);
                     ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 }
                 break;

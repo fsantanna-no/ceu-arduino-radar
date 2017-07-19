@@ -45,6 +45,7 @@ native/pos do
                         char str[64];
                         snprintf(str, 64, "> %3d | %4ld/%4ld | %3d/%3d=%3d\r\n",
                             touch, cur, (u32)(M_TOTAL/M_PAR), M_ATAS[0], M_ATAS[1], M_ATAS[0]+M_ATAS[1]);
+                        ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                     }
                     cur = 0;
                 }
