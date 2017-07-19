@@ -85,7 +85,7 @@ native/pos do
 
                 {
                     char str[20];
-                    snprintf(str, 20, "%d | ms: %4d\r\n", id, ms);
+                    snprintf(str, 20, "%d | ms: %4ld\r\n", id, ms);
                     ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 }
 

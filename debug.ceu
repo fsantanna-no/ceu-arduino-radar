@@ -23,7 +23,7 @@ native/pos do
             case CEU_OUTPUT_OUT_SEQUENCE_END: {
                 tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
                 char str[32];
-                snprintf(str, 32, "\t<<< sequence %d: %dms\r\n", ps->_1, ps->_2);
+                snprintf(str, 32, "\t<<< sequence %d: %ldms\r\n", ps->_1, ps->_2);
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 break;
             }

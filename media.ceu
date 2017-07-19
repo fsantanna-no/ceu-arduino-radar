@@ -21,7 +21,7 @@ native/pos do
             case CEU_OUTPUT_OUT_SEQUENCE_END: {
                 tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
                 char str[32];
-                snprintf(str, 32, "<<< %d: %dms\r\n", ps->_1, ps->_2);
+                snprintf(str, 32, "<<< %d: %ldms\r\n", ps->_1, ps->_2);
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 break;
             }
@@ -40,11 +40,12 @@ native/pos do
                 cur += ms;
                 if (touch%2 == 0) {
                     M_TOTAL += cur;
-                    M_PAR++;
-                    char str[64];
-                    snprintf(str, 64, "> %3d | %4d/%4d | %2d/%2d=%3d\r\n",
-                        touch, cur, M_TOTAL/M_PAR, M_ATAS[0], M_ATAS[1], M_ATAS[0]+M_ATAS[1]);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
+                    M_PAR   += 1;
+                    {
+                        char str[64];
+                        snprintf(str, 64, "> %3d | %4ld/%4ld | %3d/%3d=%3d\r\n",
+                            touch, cur, (u32)(M_TOTAL/M_PAR), M_ATAS[0], M_ATAS[1], M_ATAS[0]+M_ATAS[1]);
+                    }
                     cur = 0;
                 }
                 break;
