@@ -8,7 +8,8 @@
         - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
 #endif
 
-#define MS_TO_GAME              {30000LL}       // 30 seconds
+#define MS_TO_GAME              10000           // 10 seconds
+//#define MS_TO_GAME              30000           // 30 seconds
 //#define MS_TO_GAME              {300000LL}      // 5 minutes
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
@@ -37,7 +38,7 @@ output bool PIN_03;
 #endif
 
 par do
-    #include "abraf.ceu"
+    //#include "abraf.ceu"
     await FOREVER;
 with
     //#include "chico.ceu"
@@ -46,7 +47,7 @@ with
     #include "media.ceu"
     await FOREVER;
 with
-    #include "debug.ceu"
+    //#include "debug.ceu"
     await FOREVER;
 with
     loop do

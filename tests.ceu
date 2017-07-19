@@ -29,23 +29,48 @@ spawn do
         emit IN_TOUCH(1);
         //loop do
             MS(10000);
-            loop _ in [1->10] do
+            emit IN_TOUCH(1);
+            MS(600);
+            loop _ in [1->5] do
                 emit IN_TOUCH(0);
-                MS(200);
-                emit IN_TOUCH(0);
-                MS(200);
+                MS(400);
                 emit IN_TOUCH(1);
-                MS(300);
-                emit IN_TOUCH(1);
-                MS(300);
-            end
-            loop _ in [1->10] do
-                emit IN_TOUCH(0);
-                MS(700);
-                emit IN_TOUCH(1);
-                MS(300);
+                MS(600);
             end
             MS(3000);
+            emit IN_TOUCH(0);
+            MS(700);
+            loop _ in [1->5] do
+                emit IN_TOUCH(1);
+                MS(300);
+                emit IN_TOUCH(0);
+                MS(700);
+            end
+            MS(3000);
+            emit IN_TOUCH(1);
+            MS(500);
+            loop _ in [1->5] do
+                emit IN_TOUCH(0);
+                MS(500);
+                emit IN_TOUCH(1);
+                MS(500);
+            end
+            MS(3000);
+#if 1
+            emit IN_TOUCH(0);
+            MS(700);
+            loop _ in [1->5] do
+                emit IN_TOUCH(1);
+                MS(300);
+                emit IN_TOUCH(0);
+                MS(300);
+                emit IN_TOUCH(1);
+                MS(700);
+                emit IN_TOUCH(0);
+                MS(700);
+            end
+            MS(3000);
+#endif
         //end
     end
 end

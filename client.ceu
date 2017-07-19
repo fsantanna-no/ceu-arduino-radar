@@ -24,7 +24,8 @@ end
 { 
     radio.begin();
     radio.setAutoAck(false);
-    radio.setDataRate(RF24_250KBPS);
+    //radio.setDataRate(RF24_250KBPS);
+    radio.setDataRate(RF24_1MBPS);
     radio.openWritingPipe(pipe);
 }
 
@@ -68,12 +69,29 @@ end
 pool[2] Led leds;
 
 _Serial.begin(9600);
+
+#if 0
+spawn do
+    await async do
+        loop do
+            var int v = _analogRead(0);
+            _Serial.println(v);
+            //_delay(1000);
+        end
+    end
+end
+#endif
+
 var u8 id = _digitalRead(PIN_ID);
 loop do
     await Vib_Mic();
     spawn Led() in leds;
     _Serial.println(id);
-    _radio_write(&&id, 1);
+    var int i;
+    loop i in [1->5] do
+        _radio_write(&&id, 1);
+        await async do end;
+    end
     id = 1-id;
     await 200ms;
 end

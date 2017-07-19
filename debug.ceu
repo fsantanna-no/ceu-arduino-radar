@@ -6,29 +6,25 @@ native/pos do
         }
         switch (p1.num) {
             case CEU_OUTPUT_OUT_GAME_INI:
-                //printf(">>> game\n");
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)">>> game\r\n");
                 break;
-            case CEU_OUTPUT_OUT_GAME_END:
-                //printf("<<< game: %d sequences\n", *((u16*)p2.ptr));
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"<<< game: ");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, *((u16*)p2.ptr));
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" sequences\r\n");
+            case CEU_OUTPUT_OUT_GAME_END: {
+                char str[32];
+                snprintf(str, 32, "<<< game: %d sequences\r\n", *((u16*)p2.ptr));
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 break;
-            case CEU_OUTPUT_OUT_SEQUENCE_INI:
-                //printf("\t>>> sequence %d\n", *((u16*)p2.ptr));
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\t>>> sequence ");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, *((u16*)p2.ptr));
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
+            }
+            case CEU_OUTPUT_OUT_SEQUENCE_INI: {
+                char str[32];
+                snprintf(str, 32, "\t>>> sequence %d\r\n", *((u16*)p2.ptr));
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 break;
+            }
             case CEU_OUTPUT_OUT_SEQUENCE_END: {
                 tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
-                //printf("\t<<< sequence %d: %dms\n", ps->_1, ps->_2);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\t<<< sequence ");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, ps->_1);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)": ");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (s32)ps->_2);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"ms\r\n");
+                char str[32];
+                snprintf(str, 32, "\t<<< sequence %d: %dms\r\n", ps->_1, ps->_2);
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 break;
             }
             case CEU_OUTPUT_OUT_SEQUENCE_FALL:
@@ -37,14 +33,9 @@ native/pos do
                 break;
             case CEU_OUTPUT_OUT_TOUCH: {
                 tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
-                //printf("\t\t[%2d] id=%d %4dms", ps->_1, ps->_2, ps->_3);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\t\t[");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, ps->_1);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"] id=");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, ps->_2);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)" ");
-                ceu_callback_num_num(CEU_CALLBACK_LOG, 2, (s32)ps->_3);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"ms");
+                char str[32];
+                snprintf(str, 32, "\t\t[%2d] id=%d %4dms", ps->_1, ps->_2, ps->_3);
+                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
                 if (ps->_3 <= ATTACK_THRESHOLD_IN_MS) {
                     //printf("    *");
                     ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"    *");

@@ -28,7 +28,8 @@ end
     ceu_callback_register(&CB_INPUT);
     radio.begin();
     radio.setAutoAck(false);
-    radio.setDataRate(RF24_250KBPS);
+    //radio.setDataRate(RF24_250KBPS);
+    radio.setDataRate(RF24_1MBPS);
     radio.openReadingPipe(1,pipe);
     radio.startListening();
 }
