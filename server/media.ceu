@@ -27,10 +27,11 @@ native/pos do
             }
             case CEU_OUTPUT_OUT_TOUCH: {
                 tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
-                u16 touch = ps->_1;
-                u8  id    = ps->_2;
-                u32 ms    = ps->_3;
-                if (Is_Attack(touch,ms)) {
+                u16  touch  = ps->_1;
+                u8   id     = ps->_2;
+                u32  ms     = ps->_3;
+                bool is_att = ps->_4;
+                if (is_att) {
                     M_ATAS[id]++;
                 }
                 static u32 cur = 0;
