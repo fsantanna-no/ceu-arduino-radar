@@ -62,7 +62,7 @@ with
     //#include "media.ceu"
     await FOREVER;
 with
-    #include "debug.ceu"
+    //#include "debug.ceu"
     await FOREVER;
 with
     loop do
