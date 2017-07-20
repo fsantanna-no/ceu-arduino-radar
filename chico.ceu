@@ -61,7 +61,6 @@ native/pos do
                 double equ = sqrt((equ0*equ0 + equ1*equ1) / 2);
                 C_EQU += ms2pts(equ) * ps->_2;
                 C_DT  += ps->_2;
-//printf(">>> %f*%d -> %f [%d/%d]\n", equ, ps->_2, C_EQU/C_DT, c_dt,C_DT);
                 ceu_dbg_assert(c_dt == ps->_2);
                 break;
             }
@@ -100,8 +99,6 @@ native/pos do
                     double equ0 = (c_tch[0]==0) ? 9999 : c_equ[0]/(double)c_tch[0];
                     double equ1 = (c_tch[1]==0) ? 9999 : c_equ[1]/(double)c_tch[1];
                     double equ = sqrt((equ0*equ0 + equ1*equ1) / 2);
-//printf("%d/%d -- ", c_equ[0], c_equ[1]);
-//printf("%f/%f/%f -- ", equ0, equ1, equ);
 
                     EQU = (C_EQU + ms2pts(equ)*c_dt) / (C_DT + c_dt);
 
