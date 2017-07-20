@@ -33,14 +33,15 @@ native/pos do
                 break;
             case CEU_OUTPUT_OUT_TOUCH: {
                 tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
+                u16 touch = ps->_1;
+                u8  id    = ps->_2;
+                u32 dt    = ps->_3;
                 char str[32];
-                snprintf(str, 32, "\t\t[%2d] id=%d %4ldms", ps->_1, ps->_2, ps->_3);
+                snprintf(str, 32, "\t\t[%2d] id=%d %4ldms", touch, id, dt);
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                if (ps->_3 <= ATTACK_THRESHOLD_IN_MS) {
-                    //printf("    *");
+                if (Is_Attack(touch,dt)) {
                     ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"    *");
                 }
-                //printf("\n");
                 ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
                 break;
             }

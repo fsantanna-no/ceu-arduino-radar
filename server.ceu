@@ -14,6 +14,7 @@
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
+#define RULE_20
 
 input  u8            IN_TOUCH;
 
@@ -25,6 +26,20 @@ output u16           OUT_SEQUENCE_INI;      // seq
 output (u16,u32)     OUT_SEQUENCE_END;      // seq, dt
 output u16           OUT_SEQUENCE_FALL;     // seq
 output (u16,u8,u32)  OUT_TOUCH;             // touch, id, dt
+
+native _Is_Attack;
+native/pos do
+    bool Is_Attack (u16 touch, u32 dt) {
+#ifdef RULE_20
+        static u32 old = 0;
+        bool ret = (touch > 1) && (dt <= old*0.8);
+        old = dt;
+        return ret;
+#else
+        return (dt <= ATTACK_THRESHOLD_IN_MS);
+#endif
+    }
+end
 
 input byte SERIAL;
 
@@ -41,10 +56,10 @@ par do
     #include "abraf.ceu"
     await FOREVER;
 with
-    #include "chico.ceu"
+    //#include "chico.ceu"
     await FOREVER;
 with
-    #include "media.ceu"
+    //#include "media.ceu"
     await FOREVER;
 with
     #include "debug.ceu"
@@ -56,6 +71,8 @@ with
 
         emit OUT_GAME_INI(idA,idB);
         spawn Tone(true,10);
+        await 500ms;                                    // skip storm
+
         var u32 ms_game = 0;                            // total game time
 
         pool[2] Tone tones;
@@ -105,7 +122,7 @@ with
                     end
                     var u32 dt = ms[$ms-1]-ms[$ms-2];
                     emit OUT_TOUCH(touch, id1, dt);
-                    if dt <= ATTACK_THRESHOLD_IN_MS then
+                    if _Is_Attack(touch,dt) as bool then
                         spawn Tone(true,2) in tones;
                     else
                         spawn Tone(true,1) in tones;

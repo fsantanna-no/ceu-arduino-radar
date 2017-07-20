@@ -30,7 +30,7 @@ native/pos do
                 u16 touch = ps->_1;
                 u8  id    = ps->_2;
                 u32 ms    = ps->_3;
-                if (ms <= ATTACK_THRESHOLD_IN_MS) {
+                if (Is_Attack(touch,ms)) {
                     M_ATAS[id]++;
                 }
                 static u32 cur = 0;
