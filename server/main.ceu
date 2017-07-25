@@ -16,7 +16,7 @@
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
 #define RULE_20
 
-input  u8                IN_TOUCH;
+input  (u8,bool)         IN_TOUCH;
 
 output &u32              GET_TIME;
 
@@ -52,8 +52,11 @@ with
     await FOREVER;
 with
     loop do
-        var u8 idA = await IN_TOUCH;
-        var u8 idB = await IN_TOUCH until (idA != idB);
+        var u8 idA;
+        var u8 idB;
+        (idA,_) = await IN_TOUCH;
+        (idB,_) = await IN_TOUCH until (idA != idB);
+        _ceu_dbg_assert(idA+idB == 1);
 
         emit OUT_GAME_INI(idA,idB);
         spawn Tone(true,10);
@@ -80,7 +83,8 @@ with
                 emit OUT_SEQUENCE_END(seq,dt);
             end
 
-            var u8 id1 = await IN_TOUCH;                // start counting after 0th touch
+            var u8 id1;
+            (id1,_) = await IN_TOUCH;                // start counting after 0th touch
             //emit OUT_TOUCH(0, id1, -1);
             spawn Tone(true,1) in tones;
 
@@ -100,7 +104,8 @@ with
                     await (MS_TO_FALL)ms;
                     break;
                 with                                    // alternate touches between idA/idB
-                    var u8 id2 = await IN_TOUCH until (id2 != id1);
+                    var u8 id2;
+                    (id2,_) = await IN_TOUCH until (id2 != id1);
                     do
                         var u32 now = _;
                         emit GET_TIME(&now);

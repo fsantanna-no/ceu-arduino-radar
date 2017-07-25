@@ -1,13 +1,12 @@
 #include "arduino/arduino.ceu"
 
-#define PIN_LED(x) PIN_02(x)
-#define PIN_VIB PIN_03
-#define PIN_MIC PIN_04
-#define PIN_ID  6
+#define PIEZO_THRESHOLD 10
+#define PIN_LED(x)      PIN_10(x)
+#define PIN_FORE        A0
+#define PIN_BACK        A1
+#define PIN_ID          6
 
-output bool PIN_02;     // LED
-input  bool PIN_03;     // VIB
-input  bool PIN_04;     // MIC
+output bool PIN_10;     // LED
 input  bool PIN_06;     // ID
 
 native _radio;
@@ -29,33 +28,34 @@ end
     radio.openWritingPipe(pipe);
 }
 
-code/await Vib_Mic (void) -> void do
+code/await Piezo (var u8 pin) -> (event void ok, var u16 avg) -> FOREVER do
+    var[10*] u16 vals = [ 0,0,0,0,0,0,0,0,0,0 ];
+    var u16 sum = 0;
+    avg = 0;
     loop do
-        par/or do
-            par/and do
-                //await PIN_VIB;
-            with
-                await PIN_MIC;
-            end
-            escape;
-        with
-            var bool is_vib = do
-                par do
-                    await PIN_VIB;
-                    escape true;
-                with
-                    await PIN_MIC;
-                    escape false;
-                end
-            end;
-            await 100ms;
-            if is_vib then
-                _Serial.println("no mic");
-            else
-                _Serial.println("no vib");
-            end
+        var int v = _analogRead(pin);
+        sum = sum + v - vals[0];
+        $vals = $vals - 1;
+        vals = vals .. [v];
+        avg = sum/10;
+_Serial.println(avg);
+        if avg > PIEZO_THRESHOLD then
+            emit ok;
         end
+        await async do end;
     end
+end
+
+var& Piezo piezoF = spawn Piezo(PIN_FORE);
+var& Piezo piezoB = spawn Piezo(PIN_BACK);
+
+code/await Hit (void) -> bool do
+    par/or do
+        await outer.piezoF.ok;
+    with
+        await outer.piezoB.ok;
+    end
+    escape outer.piezoF.avg >= outer.piezoB.avg;
 end
 
 code/await Led (void) -> void do
@@ -70,23 +70,13 @@ pool[2] Led leds;
 
 _Serial.begin(9600);
 
-#if 0
-spawn do
-    await async do
-        loop do
-            var int v = _analogRead(0);
-            _Serial.println(v);
-            //_delay(1000);
-        end
-    end
-end
-#endif
-
 var u8 id = _digitalRead(PIN_ID);
 loop do
-    await Vib_Mic();
+    var bool is_fore = await Hit();
     spawn Led() in leds;
-    _Serial.println(id);
+    _Serial.print("id: ");  _Serial.print(id);
+    _Serial.print("f/b: "); _Serial.println(is_fore);
+    var u8 v = (id | ((is_fore as u8)<<4));
     var int i;
     loop i in [1->5] do
         _radio_write(&&id, 1);

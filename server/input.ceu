@@ -40,9 +40,11 @@ spawn do
             if _radio.available() as bool then
                 var u8 v = _;
                 _radio_read(&&v, 1);
-                //{Serial.print("read: ");}
-                //{Serial.println(@v);}
-                emit IN_TOUCH(v);
+                var u8   id      = (v & 0xF);
+                var bool is_fore = (v >> 4)  as bool;
+                {Serial.print("id: ");  Serial.print(@id);}
+                {Serial.print("f/b: "); Serial.println(@is_fore);}
+                emit IN_TOUCH(id, is_fore);
             end
         end
     end
