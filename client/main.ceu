@@ -4,7 +4,7 @@
 #define PIN_LED(x)      PIN_10(x)
 #define PIN_FORE        A0
 #define PIN_BACK        A1
-#define PIN_ID          6
+#define PIN_ID          2
 
 output bool PIN_10;     // LED
 input  bool PIN_06;     // ID
@@ -38,8 +38,8 @@ code/await Piezo (var u8 pin) -> (event void ok, var u16 avg) -> FOREVER do
         $vals = $vals - 1;
         vals = vals .. [v];
         avg = sum/10;
-_Serial.println(avg);
         if avg > PIEZO_THRESHOLD then
+_Serial.println(avg);
             emit ok;
         end
         await async do end;
@@ -70,16 +70,18 @@ pool[2] Led leds;
 
 _Serial.begin(9600);
 
-var u8 id = _digitalRead(PIN_ID);
+_pinMode(PIN_ID, _INPUT_PULLUP);
+var u8 id = 1 - _digitalRead(PIN_ID);
 loop do
     var bool is_fore = await Hit();
     spawn Led() in leds;
     _Serial.print("id: ");  _Serial.print(id);
+    _Serial.print(" ");
     _Serial.print("f/b: "); _Serial.println(is_fore);
     var u8 v = (id | ((is_fore as u8)<<4));
     var int i;
     loop i in [1->5] do
-        _radio_write(&&id, 1);
+        //_radio_write(&&id, 1);
         await async do end;
     end
     id = 1-id;
