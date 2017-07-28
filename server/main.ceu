@@ -35,7 +35,7 @@ output bool PIN_03;
 #include "tests.ceu"
 #else
 #include "tone.ceu"
-#include "input.ceu"
+#include "radio.ceu"
 #endif
 
 par do

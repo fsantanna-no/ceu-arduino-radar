@@ -1,37 +1,51 @@
 #include "arduino/arduino.ceu"
 
 #define PIEZO_THRESHOLD 10
-#define PIN_LED(x)      PIN_10(x)
 #define PIN_FORE        A0
 #define PIN_BACK        A1
-#define PIN_ID          2
-
-output bool PIN_10;     // LED
-input  bool PIN_06;     // ID
 
 native _radio;
-native/nohold _radio_write;
+native/nohold _radio_read, _radio_write;
 native/pos do
     ##include <SPI.h>
     ##include <nRF24L01.h>
     ##include <RF24.h>
+    ##define radio_read(a,b)  radio.read(a,b)
     ##define radio_write(a,b) radio.write(a,b)
     const uint64_t pipe =  0xE8E8F0F0E1LL;
     RF24 radio(8,7);
 end
 
+input (u8,u8,u8) CONFIG;     // id,back,fore
 { 
     radio.begin();
-    radio.setAutoAck(false);
-    //radio.setDataRate(RF24_250KBPS);
-    radio.setDataRate(RF24_1MBPS);
+    //radio.setAutoAck(false);              // true by default
+    radio.setDataRate(RF24_250KBPS);
+    //radio.setDataRate(RF24_1MBPS);
     radio.openWritingPipe(pipe);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
 }
+spawn do
+    await async do
+        loop do
+            if _radio.available() as bool then
+                var u8 v = _;
+                _radio_read(&&v, 1);
+                var u8   id = (v & 0xF0) >> 4;
+                var u8 back = (v & 0x02) >> 1;
+                var u8 fore = (v & 0x01) >> 0;
+                emit CONFIG(id, back, fore);
+            end
+        end
+    end
+end
 
-code/await Piezo (var u8 pin) -> (event void ok, var u16 avg) -> FOREVER do
+code/await Piezo (var u8 pin) -> (event void ok, var u16 avg, var u8 threshold) -> FOREVER do
     var[10*] u16 vals = [ 0,0,0,0,0,0,0,0,0,0 ];
     var u16 sum = 0;
     avg = 0;
+    threshold = PIEZO_THRESHOLD;
     loop do
         var int v = _analogRead(pin);
         sum = sum + v - vals[0];
@@ -58,32 +72,27 @@ code/await Hit (void) -> bool do
     escape outer.piezoF.avg >= outer.piezoB.avg;
 end
 
-code/await Led (void) -> void do
-    emit PIN_LED(true);
-    do finalize with
-        emit PIN_LED(false);
-    end
-    await 500ms;
-end
-
-pool[2] Led leds;
-
 _Serial.begin(9600);
 
-_pinMode(PIN_ID, _INPUT_PULLUP);
-var u8 id = 1 - _digitalRead(PIN_ID);
-loop do
-    var bool is_fore = await Hit();
-    spawn Led() in leds;
-    //_Serial.print("id: ");  _Serial.print(id);
-    //_Serial.print(" ");
-    //_Serial.print("f/b: "); _Serial.println(is_fore);
-    var u8 v = (id | ((is_fore as u8)<<4));
-    var int i;
-    loop i in [1->5] do
-        _radio_write(&&id, 1);
-        await async do end;
+var u8 id = 0;
+par do
+    var u8 id_;
+    var u8 fore;
+    var u8 back;
+    every (id_,back,fore) in CONFIG do
+        id = id_;
+        piezoF.threshold = piezoF.threshold + fore;
+        piezoB.threshold = piezoB.threshold + back;
     end
-    //id = 1-id;
-    await 200ms;
+with
+    loop do
+        var bool is_fore = await Hit();
+        //_Serial.print("id: ");  _Serial.print(id);
+        //_Serial.print(" ");
+        //_Serial.print("f/b: "); _Serial.println(is_fore);
+        var u8 v = (id | ((is_fore as u8)<<4));
+        _radio_write(&&v, 1);
+        //id = 1-id;
+        await 200ms;
+    end
 end
