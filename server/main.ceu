@@ -40,7 +40,7 @@ output bool PIN_03;
 #endif
 
 par do
-    #include "abraf.ceu"
+    //#include "abraf.ceu"
     await FOREVER;
 with
     //#include "chico.ceu"
@@ -49,7 +49,7 @@ with
     //#include "media.ceu"
     await FOREVER;
 with
-    #include "debug.ceu"
+    //#include "debug.ceu"
     await FOREVER;
 with
     loop do
@@ -60,7 +60,7 @@ with
         _ceu_dbg_assert(idA+idB == 1);
 
         emit OUT_GAME_INI(idA,idB);
-        spawn Tone(true,10);
+        spawn Tone_Start;
         await 500ms;                                    // skip storm
 
         var u32 ms_game = 0;                            // total game time
@@ -87,7 +87,7 @@ with
             var u8 id1;
             (id1,_) = await IN_TOUCH;                // start counting after 0th touch
             //emit OUT_TOUCH(0, id1, -1);
-            spawn Tone(true,1) in tones;
+            spawn Tone_Ball in tones;
 
             do
                 var u32 now = _;
@@ -128,9 +128,9 @@ with
 
                     emit OUT_TOUCH(touch, id1, dt, is_att);
                     if is_att then
-                        spawn Tone(true,2) in tones;
+                        spawn Tone_Fore in tones;
                     else
-                        spawn Tone(true,1) in tones;
+                        spawn Tone_Fore_Attack in tones;
                     end
                     id1 = id2;
 
@@ -142,11 +142,11 @@ with
             end
 
             emit OUT_SEQUENCE_FALL(seq);
-            spawn Tone(false,5) in tones;
+            spawn Tone_Fall in tones;
         end
 
         emit OUT_GAME_END(seq);
-        spawn Tone(false,10) in tones;
+        spawn Tone_End in tones;
         await 5s;
     end
 end
