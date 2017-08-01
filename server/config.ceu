@@ -1,6 +1,7 @@
 code/await Piezo_Config (void) -> void do
     var byte c;
     every c in SERIAL do
+_Serial.println("SERIAL");
         var s8 v = do
             if (c == {'+'}) as bool then
                 escape 1;
@@ -10,11 +11,7 @@ code/await Piezo_Config (void) -> void do
                 escape 0;
             end
         end;
-        {
-            radio.stopListening();
-            radio.write(@(&&v), 1);
-            //radio.startListening();
-        }
+        _radio_write(&&v, 1);
         if v == 0 then
             break;
         end
@@ -23,14 +20,8 @@ end
 
 var u8 id;
 loop id in [0 -> 1] do
-var u8 x = 99;
     _Serial.print("Configurando ID ");
-    {
-        //radio.stopListening();
-        radio.write(@(&&x), 1);
-        //radio.write(@(&&id), 1);
-        //radio.startListening();
-    }
+    _radio_write(&&id, 1);
     _Serial.println(id);
 
     _Serial.println("Configurando BACKHAND:");

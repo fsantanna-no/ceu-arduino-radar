@@ -5,8 +5,8 @@ native/pos do
     ##include <nRF24L01.h>
     ##include <RF24.h>
     ##define radio_read(a,b) radio.read(a,b)
-    ##define radio_write(a,b) radio.write(a,b)
-    const uint64_t pipe[2] =  { 0xAABBCCDD00LL, 0xAABBCCDD01LL };
+    ##define radio_write(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
+    const uint64_t pipe =  0xAABBCCDDEELL;
     RF24 radio(8,7);
 
     tceu_callback_ret CB_INPUT_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
@@ -29,25 +29,30 @@ end
     ceu_callback_register(&CB_INPUT);
     radio.begin();
     radio.setAutoAck(false);              // true by default
-    //radio.setDataRate(RF24_250KBPS);
     radio.setDataRate(RF24_1MBPS);
-    radio.openWritingPipe(pipe[1]);
-    //radio.openReadingPipe(1,pipe[0]);
-    //radio.startListening();
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+    radio.openWritingPipe(pipe);
 }
 
 spawn do
-    await async do
-        loop do
-            if _radio.available() as bool then
+    loop do
+        if _radio.available() as bool then
+            await async do
                 var u8 v = _;
                 _radio_read(&&v, 1);
                 var u8   id      = (v & 0xF);
                 var bool is_fore = (v >> 4)  as bool;
-                {Serial.print("id: ");  Serial.print(@id);}
-                {Serial.print("f/b: "); Serial.println(@is_fore);}
+                {
+                    Serial.print("id: ");  Serial.print(@id);
+                    Serial.print(" ");
+                    Serial.print("f/b: "); Serial.println(@is_fore);
+                }
                 emit IN_TOUCH(id, is_fore);
             end
+            //await 200ms;    // skip storm
+        else
+            await async do end;
         end
     end
 end

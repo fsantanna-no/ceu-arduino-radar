@@ -1,12 +1,6 @@
 # ceu-arduino-radar
 
 - TODO
-    - UERJ
-        - 2 arduinos
-        - 2 protoboards
-        - joystick
-    - autoack
-        - apenas 1 envio
     - comprar
         - placas perfuradas menores
         - dip switch
@@ -15,6 +9,7 @@
         - bateria e suporte
         - 2 nanos
         - 2 radios
+        - 2 audio jacks
 
 - calcular tempo de ping para medir a velocidade mais certinho
 
