@@ -36,6 +36,7 @@ output bool PIN_03;
 #else
 #include "tone.ceu"
 #include "radio.ceu"
+#include "config.ceu"
 #endif
 
 par do

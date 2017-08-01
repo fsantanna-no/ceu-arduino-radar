@@ -1,0 +1,43 @@
+code/await Piezo_Config (void) -> void do
+    var byte c;
+    every c in SERIAL do
+        var s8 v = do
+            if (c == {'+'}) as bool then
+                escape 1;
+            else/if (c == {'-'}) as bool then
+                escape -1;
+            else
+                escape 0;
+            end
+        end;
+        {
+            radio.stopListening();
+            radio.write(@(&&v), 1);
+            //radio.startListening();
+        }
+        if v == 0 then
+            break;
+        end
+    end
+end
+
+var u8 id;
+loop id in [0 -> 1] do
+var u8 x = 99;
+    _Serial.print("Configurando ID ");
+    {
+        //radio.stopListening();
+        radio.write(@(&&x), 1);
+        //radio.write(@(&&id), 1);
+        //radio.startListening();
+    }
+    _Serial.println(id);
+
+    _Serial.println("Configurando BACKHAND:");
+    await Piezo_Config();
+
+    _Serial.println("Configurando FOREHAND:");
+    await Piezo_Config();
+end
+
+_Serial.println("Inicio do Jogo...");

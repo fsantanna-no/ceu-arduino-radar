@@ -14,8 +14,8 @@ end
 { 
     Serial.begin(9600);
     radio.begin();
-    radio.setAutoAck(false);
-    radio.setDataRate(RF24_250KBPS);
+    //radio.setAutoAck(true);
+    radio.setDataRate(RF24_1MBPS);
     radio.openReadingPipe(1,pipe);
     radio.startListening();
 }

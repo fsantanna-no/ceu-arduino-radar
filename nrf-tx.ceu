@@ -10,14 +10,16 @@ native/pos do
 end
 
 { 
+    Serial.begin(9600);
     radio.begin();
-    radio.setAutoAck(false);
-    radio.setDataRate(RF24_250KBPS);
+    //radio.setAutoAck(true);
+    radio.setDataRate(RF24_1MBPS);
     radio.openWritingPipe(pipe);
 }
 
 every 1s do
     {
+        Serial.println(V);
         radio.write(&V, 1);
         V++;
     }

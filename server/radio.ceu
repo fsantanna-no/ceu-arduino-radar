@@ -6,7 +6,7 @@ native/pos do
     ##include <RF24.h>
     ##define radio_read(a,b) radio.read(a,b)
     ##define radio_write(a,b) radio.write(a,b)
-    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    const uint64_t pipe[2] =  { 0xAABBCCDD00LL, 0xAABBCCDD01LL };
     RF24 radio(8,7);
 
     tceu_callback_ret CB_INPUT_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
@@ -28,37 +28,26 @@ end
 {
     ceu_callback_register(&CB_INPUT);
     radio.begin();
-    //radio.setAutoAck(false);              // true by default
-    radio.setDataRate(RF24_250KBPS);
-    //radio.setDataRate(RF24_1MBPS);
-    radio.openWritingPipe(pipe);
-    radio.openReadingPipe(1,pipe);
-    radio.startListening();
+    radio.setAutoAck(false);              // true by default
+    //radio.setDataRate(RF24_250KBPS);
+    radio.setDataRate(RF24_1MBPS);
+    radio.openWritingPipe(pipe[1]);
+    //radio.openReadingPipe(1,pipe[0]);
+    //radio.startListening();
 }
 
 spawn do
-    par do
-        await async do
-            loop do
-                if _radio.available() as bool then
-                    var u8 v = _;
-                    _radio_read(&&v, 1);
-                    var u8   id      = (v & 0xF);
-                    var bool is_fore = (v >> 4)  as bool;
-                    //{Serial.print("id: ");  Serial.print(@id);}
-                    //{Serial.print("f/b: "); Serial.println(@is_fore);}
-                    emit IN_TOUCH(id, is_fore);
-                end
+    await async do
+        loop do
+            if _radio.available() as bool then
+                var u8 v = _;
+                _radio_read(&&v, 1);
+                var u8   id      = (v & 0xF);
+                var bool is_fore = (v >> 4)  as bool;
+                {Serial.print("id: ");  Serial.print(@id);}
+                {Serial.print("f/b: "); Serial.println(@is_fore);}
+                emit IN_TOUCH(id, is_fore);
             end
-        end
-    with
-        var byte v;
-        every v in SERIAL do
-            var byte id   = 0;
-            var byte back = 0;
-            var byte fore = 0;
-            v = (id << 4) | (back << 1) | fore;
-            _radio_write(&&v, 1);
         end
     end
 end

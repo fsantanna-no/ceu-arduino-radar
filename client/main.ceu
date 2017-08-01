@@ -1,3 +1,4 @@
+#include "c.ceu"
 #include "arduino/arduino.ceu"
 
 #define PIEZO_THRESHOLD 10
@@ -12,48 +13,36 @@ native/pos do
     ##include <RF24.h>
     ##define radio_read(a,b)  radio.read(a,b)
     ##define radio_write(a,b) radio.write(a,b)
-    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    const uint64_t pipe[2] =  { 0xAABBCCDD00LL, 0xAABBCCDD01LL };
     RF24 radio(8,7);
 end
 
-input (u8,u8,u8) CONFIG;     // id,back,fore
 { 
     radio.begin();
-    //radio.setAutoAck(false);              // true by default
-    radio.setDataRate(RF24_250KBPS);
-    //radio.setDataRate(RF24_1MBPS);
-    radio.openWritingPipe(pipe);
-    radio.openReadingPipe(1,pipe);
+    radio.setAutoAck(false);              // true by default
+    //radio.setDataRate(RF24_250KBPS);
+    radio.setDataRate(RF24_1MBPS);
+    //radio.openWritingPipe(pipe[0]);
+    radio.openReadingPipe(1,pipe[1]);
     radio.startListening();
 }
-spawn do
-    await async do
-        loop do
-            if _radio.available() as bool then
-                var u8 v = _;
-                _radio_read(&&v, 1);
-                var u8   id = (v & 0xF0) >> 4;
-                var u8 back = (v & 0x02) >> 1;
-                var u8 fore = (v & 0x01) >> 0;
-                emit CONFIG(id, back, fore);
-            end
-        end
-    end
-end
 
-code/await Piezo (var u8 pin) -> (event void ok, var u16 avg, var u8 threshold) -> FOREVER do
+_Serial.begin(9600);
+var u8 id = 0;
+
+code/await Piezo (var u8 pin) -> (event void ok, var u16 avg, var u16 threshold) -> FOREVER do
     var[10*] u16 vals = [ 0,0,0,0,0,0,0,0,0,0 ];
     var u16 sum = 0;
     avg = 0;
-    threshold = PIEZO_THRESHOLD;
+    threshold = 9999; //PIEZO_THRESHOLD;
     loop do
         var int v = _analogRead(pin);
         sum = sum + v - vals[0];
         $vals = $vals - 1;
         vals = vals .. [v];
         avg = sum/10;
-        if avg > PIEZO_THRESHOLD then
-//_Serial.println(avg);
+        if avg > threshold then
+_Serial.println(avg);
             emit ok;
         end
         await async do end;
@@ -72,27 +61,76 @@ code/await Hit (void) -> bool do
     escape outer.piezoF.avg >= outer.piezoB.avg;
 end
 
-_Serial.begin(9600);
-
-var u8 id = 0;
 par do
-    var u8 id_;
-    var u8 fore;
-    var u8 back;
-    every (id_,back,fore) in CONFIG do
-        id = id_;
-        piezoF.threshold = piezoF.threshold + fore;
-        piezoB.threshold = piezoB.threshold + back;
-    end
-with
+
     loop do
         var bool is_fore = await Hit();
-        //_Serial.print("id: ");  _Serial.print(id);
-        //_Serial.print(" ");
-        //_Serial.print("f/b: "); _Serial.println(is_fore);
+        _Serial.print("id: ");  _Serial.print(id);
+        _Serial.print(" ");
+        _Serial.print("f/b: "); _Serial.println(is_fore);
         var u8 v = (id | ((is_fore as u8)<<4));
-        _radio_write(&&v, 1);
-        //id = 1-id;
+        {
+            radio.stopListening();
+            radio.write(@(&&v), 1);
+            radio.startListening();
+        }
+        id = 1-id;
         await 200ms;
     end
+
+with
+
+    /* READ CONFIGURATION */
+
+    code/await Read (void) -> byte do
+        var byte ret = _;
+        await async (ret) do
+            loop do
+                if _radio.available() as bool then
+                    var byte v = _;
+                    _radio_read(&&v, 1);
+                    ret = v;
+                    break;
+                end
+            end
+        end
+    end
+
+    _Serial.print("Esperando ID: ");
+    var byte id_ = await Read();
+    id = id_ as u8;
+    _Serial.println(id);
+
+    code/await Piezo_Config (var& Piezo piezo) -> void do
+        piezo.threshold = PIEZO_THRESHOLD;
+        loop do
+            var byte v_ = await Read();
+            var s8 v = v_ as s8;
+            if v == 0 then
+                break;
+            else
+                var int sum = ((piezo.threshold as int) + v) as int;
+                _ceu_dbg_assert(sum>=0 and sum<1024);
+                piezo.threshold = sum as u16;
+            end
+            do
+                watching 10s do
+                    await Hit();
+                end
+            end
+        end
+    end
+
+    _Serial.print("Configurando BACKHAND: ");
+    await Piezo_Config(&piezoB);
+    _Serial.println("ok");
+
+    _Serial.print("Configurando FOREHAND: ");
+    await Piezo_Config(&piezoF);
+    _Serial.println("ok");
+
+    /* START GAME */
+
+    _Serial.println("Inicio do Jogo...");
+    await FOREVER;
 end
