@@ -18,17 +18,35 @@ _Serial.println("SERIAL");
     end
 end
 
-var u8 id;
-loop id in [0 -> 1] do
-    _Serial.print("Configurando ID ");
-    _radio_write(&&id, 1);
-    _Serial.println(id);
+par/or do
+    var u8 id;
+    var bool is_fore;
+    pool[1] Tone tones;
+    every (id,is_fore) in IN_TOUCH do
+        {
+            Serial.print("id: ");  Serial.print(@id);
+            Serial.print(" ");
+            Serial.print("f/b: "); Serial.println(@is_fore);
+        }
+        if is_fore then
+            spawn Tone_Fore in tones;
+        else
+            spawn Tone_Back in tones;
+        end
+    end
+with
+    var u8 id;
+    loop id in [0 -> 1] do
+        _Serial.print("Configurando ID ");
+        _radio_write(&&id, 1);
+        _Serial.println(id);
 
-    _Serial.println("Configurando BACKHAND:");
-    await Piezo_Config();
+        _Serial.println("Configurando BACKHAND:");
+        await Piezo_Config();
 
-    _Serial.println("Configurando FOREHAND:");
-    await Piezo_Config();
+        _Serial.println("Configurando FOREHAND:");
+        await Piezo_Config();
+    end
 end
 
 _Serial.println("Inicio do Jogo...");

@@ -106,7 +106,8 @@ with
                     break;
                 with                                    // alternate touches between idA/idB
                     var u8 id2;
-                    (id2,_) = await IN_TOUCH until (id2 != id1);
+                    var bool is_fore;
+                    (id2,is_fore) = await IN_TOUCH until (id2 != id1);
                     do
                         var u32 now = _;
                         emit GET_TIME(&now);
@@ -127,10 +128,18 @@ with
                     end;
 
                     emit OUT_TOUCH(touch, id1, dt, is_att);
-                    if is_att then
-                        spawn Tone_Fore in tones;
+                    if is_fore then
+                        if is_att then
+                            spawn Tone_Fore_Attack in tones;
+                        else
+                            spawn Tone_Fore in tones;
+                        end
                     else
-                        spawn Tone_Fore_Attack in tones;
+                        if is_att then
+                            spawn Tone_Back_Attack in tones;
+                        else
+                            spawn Tone_Back in tones;
+                        end
                     end
                     id1 = id2;
 

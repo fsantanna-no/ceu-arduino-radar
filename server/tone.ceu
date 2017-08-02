@@ -25,6 +25,7 @@ code/await Tone (var uint freq, var bool inc, var int i) -> void do
     end
 end
 
+#if 0
 await Tone_Start;
 await 1s;
 await Tone_End;
@@ -41,3 +42,4 @@ await Tone_Back;
 await 1s;
 await Tone_Back_Attack;
 do await FOREVER; end
+#endif
