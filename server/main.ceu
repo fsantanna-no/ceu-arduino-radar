@@ -27,9 +27,10 @@ output (u16,u32)         OUT_SEQUENCE_END;      // seq, dt
 output u16               OUT_SEQUENCE_FALL;     // seq
 output (u16,u8,u32,bool) OUT_TOUCH;             // touch, id, dt
 
-input byte SERIAL;
+input byte SERIAL_RECEIVE_BYTE;
 
-output bool PIN_03;
+#define PIN_TONE 2
+output bool PIN_02;//##PIN_TONE;
 
 #ifdef DEBUG
 #include "tests.ceu"
@@ -37,6 +38,32 @@ output bool PIN_03;
 #include "tone.ceu"
 #include "radio.ceu"
 #include "config.ceu"
+#endif
+
+#if 0
+native/pre do
+/*
+    #define PORT_SND    PORTD
+    #define DDR_SND     DDRD
+    #define SND_PIN     2           // SND=2
+    #define PORT_VID    PORTB
+    #define DDR_VID     DDRB
+    #define VID_PIN     2           // VID=10
+    #define PORT_SYNC   PORTB
+    #define DDR_SYNC    DDRB
+    #define SYNC_PIN    1           // SYNC=9
+*/
+    ##include <fontALL.h>
+    ##include <TVout.h>
+    TVout TV;
+end
+{
+      TV.begin(NTSC,120,96);
+      TV.select_font(font6x8);
+      TV.println("Ola");
+tone(2, 1000, 3000);
+      TV.println("Mundo");
+}
 #endif
 
 par do
@@ -49,7 +76,7 @@ with
     //#include "media.ceu"
     await FOREVER;
 with
-    //#include "debug.ceu"
+    #include "debug.ceu"
     await FOREVER;
 with
     loop do
@@ -119,7 +146,7 @@ with
                     var u32 dt = ms[$ms-1]-ms[$ms-2];
                     var bool is_att = do
 #ifdef RULE_20
-                        var bool ret = (touch > 1) and (dt <= (old! as float)*0.8);
+                        var bool ret = (touch > 1) and (dt <= (old! as real)*0.8);
                         old = dt;
                         escape ret;
 #else

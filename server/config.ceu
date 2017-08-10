@@ -1,28 +1,11 @@
-code/await Piezo_Config (void) -> void do
-    var byte c;
-    every c in SERIAL do
-_Serial.println("SERIAL");
-        var s8 v = do
-            if (c == {'+'}) as bool then
-                escape 1;
-            else/if (c == {'-'}) as bool then
-                escape -1;
-            else
-                escape 0;
-            end
-        end;
-        _radio_write(&&v, 1);
-        if v == 0 then
-            break;
-        end
-    end
-end
+_Serial.println("Config...");
 
 par/or do
     var u8 id;
     var bool is_fore;
     pool[1] Tone tones;
-    every (id,is_fore) in IN_TOUCH do
+    loop do
+        (id,is_fore) = await IN_TOUCH;
         {
             Serial.print("id: ");  Serial.print(@id);
             Serial.print(" ");
@@ -35,18 +18,35 @@ par/or do
         end
     end
 with
-    var u8 id;
-    loop id in [0 -> 1] do
-        _Serial.print("Configurando ID ");
-        _radio_write(&&id, 1);
-        _Serial.println(id);
-
-        _Serial.println("Configurando BACKHAND:");
-        await Piezo_Config();
-
-        _Serial.println("Configurando FOREHAND:");
-        await Piezo_Config();
+    var byte c;
+    every c in SERIAL_RECEIVE_BYTE do
+        var s8 v = do
+            if (c == {'F'}) as bool then
+                escape {0b10000000};
+            else/if (c == {'f'}) as bool then
+                escape {0b01000000};
+            else/if (c == {'B'}) as bool then
+                escape {0b00100000};
+            else/if (c == {'b'}) as bool then
+                escape {0b00010000};
+            else/if (c == {'G'}) as bool then
+                escape {0b10000001};
+            else/if (c == {'g'}) as bool then
+                escape {0b01000001};
+            else/if (c == {'C'}) as bool then
+                escape {0b00100001};
+            else/if (c == {'c'}) as bool then
+                escape {0b00010001};
+            else
+                escape 0;
+            end
+        end;
+        _radio_write(&&v, 1);
+        if v == 0 then
+            break;
+        end
     end
+
 end
 
-_Serial.println("Inicio do Jogo...");
+_Serial.println("Start...");

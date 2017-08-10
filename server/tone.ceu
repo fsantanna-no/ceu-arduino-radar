@@ -9,18 +9,18 @@
 #define Tone_Back        Tone(500,false,1)
 #define Tone_Back_Attack Tone(500,false,2)
 
-code/await Tone (var uint freq, var bool inc, var int i) -> void do
+code/await Tone (var uint freq, var bool inc, var int i) -> none do
     do finalize with
-        _noTone(3);
+        _noTone(PIN_TONE);
     end
     loop i in [1 -> i] do
         if inc then
-            _tone(3,freq+i*100);
+            _tone(PIN_TONE,freq+i*100);
         else
-            _tone(3,freq-i*100);
+            _tone(PIN_TONE,freq-i*100);
         end
         await 50ms;
-        _noTone(3);
+        _noTone(PIN_TONE);
         await 50ms;
     end
 end
