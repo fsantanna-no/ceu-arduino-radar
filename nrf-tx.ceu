@@ -4,7 +4,7 @@ native/pos do
     ##include <nRF24L01.h>
     ##include <RF24.h>
 
-    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    const uint64_t pipe =  0xAABBCCDDEELL;
     byte V = 0;
     RF24 radio(8,7);
 end

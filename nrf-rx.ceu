@@ -6,7 +6,7 @@ native/pos do
     ##include <nRF24L01.h>
     ##include <RF24.h>
 
-    const uint64_t pipe =  0xE8E8F0F0E1LL;
+    const uint64_t pipe =  0xAABBCCDDEELL;
     byte V = 0;
     RF24 radio(8,7);
 end
@@ -25,7 +25,7 @@ await async do
         if {radio.available()} as bool then
             var byte v = _;
             { radio.read(@(&&v), 1); }
-            _Serial.println(v);
+            _Serial.println(_map(v,0,255,0,1023));
         end
     end
 end
