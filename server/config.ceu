@@ -18,16 +18,23 @@ par/or do
         end
     end
 with
+    var u16 back = PIEZO_THRESHOLD;
+    var u16 fore = PIEZO_THRESHOLD;
+
     var byte c;
     every c in SERIAL_RECEIVE_BYTE do
         var s8 v = do
             if (c == {'F'}) as bool then
+                fore = fore + 1;
                 escape {0b10000000};
             else/if (c == {'f'}) as bool then
+                fore = fore - 1;
                 escape {0b01000000};
             else/if (c == {'B'}) as bool then
+                back = back + 1;
                 escape {0b00100000};
             else/if (c == {'b'}) as bool then
+                back = back - 1;
                 escape {0b00010000};
             else/if (c == {'G'}) as bool then
                 escape {0b10000001};
@@ -42,9 +49,15 @@ with
             end
         end;
         _radio_write(&&v, 1);
+
         if v == 0 then
             break;
         end
+
+        _Serial.print("F: ");
+        _Serial.println(fore);
+        _Serial.print("B: ");
+        _Serial.println(back);
     end
 
 end
