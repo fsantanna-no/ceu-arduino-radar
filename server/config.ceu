@@ -25,16 +25,16 @@ with
     every c in SERIAL_RECEIVE_BYTE do
         var s8 v = do
             if (c == {'F'}) as bool then
-                fore = fore + 1;
+                fore = fore + 5;
                 escape {0b10000000};
             else/if (c == {'f'}) as bool then
-                fore = fore - 1;
+                fore = fore - 5;
                 escape {0b01000000};
             else/if (c == {'B'}) as bool then
-                back = back + 1;
+                back = back + 5;
                 escape {0b00100000};
             else/if (c == {'b'}) as bool then
-                back = back - 1;
+                back = back - 5;
                 escape {0b00010000};
             else/if (c == {'G'}) as bool then
                 escape {0b10000001};

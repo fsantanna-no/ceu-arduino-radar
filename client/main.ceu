@@ -1,7 +1,7 @@
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
-#define PIEZO_THRESHOLD 50
+#define PIEZO_THRESHOLD 100
 #define PIN_FORE        A0
 #define PIN_BACK        A1
 
@@ -118,8 +118,8 @@ _Serial.println(v);
         var bool back_inc = (v & {0b00100000}) as bool;
         var bool back_dec = (v & {0b00010000}) as bool;
 
-        piezoF.threshold = piezoF.threshold + (fore_inc as int) - (fore_dec as int);
-        piezoB.threshold = piezoB.threshold + (back_inc as int) - (back_dec as int);
+        piezoF.threshold = piezoF.threshold + (fore_inc as int)*5 - (fore_dec as int);
+        piezoB.threshold = piezoB.threshold + (back_inc as int)*5 - (back_dec as int);
 
         _Serial.print("ID: ");
         _Serial.println(id);
