@@ -1,9 +1,10 @@
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
-#define PIEZO_THRESHOLD 100
-#define PIN_FORE        A0
-#define PIN_BACK        A1
+#define MIC_THRESHOLD   300
+#define PIEZO_THRESHOLD 300
+#define PIN_FORE        A1
+#define PIN_BACK        A0
 
 native _radio;
 native/nohold _radio_read, _radio_write;
@@ -29,6 +30,8 @@ end
 _Serial.begin(9600);
 var u8 id = 0;
 
+#if 0
+
 code/await Piezo (var u8 pin) -> (event none ok, var u16 avg, var u16 threshold) -> NEVER do
     var[5*] u16 vals = [ 0,0,0,0,0 ];
     var u16 sum = 0;
@@ -48,17 +51,66 @@ code/await Piezo (var u8 pin) -> (event none ok, var u16 avg, var u16 threshold)
     end
 end
 
-var& Piezo piezoF = spawn Piezo(PIN_FORE);
-var& Piezo piezoB = spawn Piezo(PIN_BACK);
+var& Piezo sensorF = spawn Piezo(PIN_FORE);
+var& Piezo sensorB = spawn Piezo(PIN_BACK);
 
 code/await Hit (none) -> bool do
     par/or do
-        await outer.piezoF.ok;
+        await outer.sensorF.ok;
     with
-        await outer.piezoB.ok;
+        await outer.sensorB.ok;
     end
-    escape outer.piezoF.avg >= outer.piezoB.avg;
+    escape outer.sensorF.avg >= outer.sensorB.avg;
 end
+
+#else
+
+code/await Mic (var int pin) -> (event int ok, var int threshold) -> NEVER do
+    threshold = MIC_THRESHOLD;
+    loop do
+        var int dif = _;
+        await async (pin,threshold,dif) do
+            var int max = 0;
+            var int min = 1023;
+            loop do
+                var int cur = _analogRead(pin);
+                if cur > max then
+                    max = cur;
+                end
+                if cur < min then
+                    min = cur;
+                end
+                dif = max - min;
+                if dif >= threshold then
+                    break;
+                end
+            end
+        end
+        emit ok(dif);
+    end
+end
+
+var& Mic sensorF = spawn Mic(PIN_FORE);
+var& Mic sensorB = spawn Mic(PIN_BACK);
+
+code/await Hit (none) -> bool do
+    var int f = 0;
+    var int b = 0;
+    par/or do
+        b = await outer.sensorB.ok;
+        await 10us;
+    with
+        f = await outer.sensorF.ok;
+        await 10us;
+    end
+    if b > f then
+        escape false;
+    else
+        escape true;
+    end
+end
+
+#endif
 
 par do
 
@@ -100,9 +152,9 @@ _Serial.println(v);
     _Serial.print("ID: ");
     _Serial.println(id);
     _Serial.print("F: ");
-    _Serial.println(piezoF.threshold);
+    _Serial.println(sensorF.threshold);
     _Serial.print("B: ");
-    _Serial.println(piezoB.threshold);
+    _Serial.println(sensorB.threshold);
 
     loop do
         var byte v = await Read();
@@ -118,14 +170,14 @@ _Serial.println(v);
         var bool back_inc = (v & {0b00100000}) as bool;
         var bool back_dec = (v & {0b00010000}) as bool;
 
-        piezoF.threshold = piezoF.threshold + (fore_inc as int)*5 - (fore_dec as int);
-        piezoB.threshold = piezoB.threshold + (back_inc as int)*5 - (back_dec as int);
+        sensorF.threshold = sensorF.threshold + (fore_inc as int)*5 - (fore_dec as int);
+        sensorB.threshold = sensorB.threshold + (back_inc as int)*5 - (back_dec as int);
 
         _Serial.print("ID: ");
         _Serial.println(id);
         _Serial.print("F: ");
-        _Serial.println(piezoF.threshold);
+        _Serial.println(sensorF.threshold);
         _Serial.print("B: ");
-        _Serial.println(piezoB.threshold);
+        _Serial.println(sensorB.threshold);
     end
 end
