@@ -1,8 +1,8 @@
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
-#define MIC_THRESHOLD   300
-#define PIEZO_THRESHOLD 300
+#define MIC_THRESHOLD   200
+#define PIEZO_THRESHOLD 400
 #define PIN_FORE        A1
 #define PIN_BACK        A0
 
@@ -103,7 +103,7 @@ code/await Hit (none) -> bool do
         f = await outer.sensorF.ok;
         await 10us;
     end
-    if b > f then
+    if (b as u32)*outer.sensorF.threshold > (f as u32)*outer.sensorB.threshold then
         escape false;
     else
         escape true;
