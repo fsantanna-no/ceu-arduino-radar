@@ -1,0 +1,67 @@
+#include "arduino/arduino.ceu"
+
+#define MIC_THRESHOLD 30
+
+native _radio;
+native/nohold _radio_read, _radio_write;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+    ##define radio_read(a,b)  radio.read(a,b)
+    ##define radio_write(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
+    const uint64_t pipe =  0xAABBCCDDEELL;
+    RF24 radio(8,7);
+end
+
+{ 
+    radio.begin();
+    radio.setAutoAck(false);              // true by default
+    radio.setDataRate(RF24_1MBPS);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+    radio.openWritingPipe(pipe);
+}
+
+_Serial.begin(9600);
+
+code/await Mic (var int pin) -> (event int ok) -> NEVER do
+    loop do
+        var int dif = _;
+        await async (pin,dif) do
+            var int max = 0;
+            var int min = 1023;
+            loop do
+                var int cur = _analogRead(pin);
+                if cur > max then
+                    max = cur;
+                end
+                if cur < min then
+                    min = cur;
+                end
+                dif = max - min;
+                if dif >= MIC_THRESHOLD then
+                    break;
+                end
+            end
+        end
+        emit ok(dif);
+    end
+end
+
+var& Mic mic0 = spawn Mic(A0);
+var& Mic mic7 = spawn Mic(A1);
+
+par do
+    var int dif0;
+    every dif0 in mic0.ok do
+        _Serial.print("MIC-0 ");
+        _Serial.println(dif0);
+    end
+with
+    var int dif7;
+    every dif7 in mic7.ok do
+        _Serial.print("MIC-7 ");
+        _Serial.println(dif7);
+    end
+end

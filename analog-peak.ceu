@@ -1,0 +1,141 @@
+#include "arduino/arduino.ceu"
+
+native _radio;
+native/nohold _radio_read, _radio_write;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+    ##define radio_read(a,b)  radio.read(a,b)
+    ##define radio_write(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
+    const uint64_t pipe =  0xAABBCCDDEELL;
+    RF24 radio(8,7);
+end
+
+{ 
+    radio.begin();
+    radio.setAutoAck(false);              // true by default
+    radio.setDataRate(RF24_1MBPS);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+    radio.openWritingPipe(pipe);
+}
+
+_Serial.begin(9600);
+
+code/await Amp (var int pin) -> int do
+    var int max = 0;
+    var int min = 1023;
+    watching 50ms do
+        await async (pin,min,max) do
+            loop do
+                var int cur = _analogRead(pin);
+                if cur > max then
+                    max = cur;
+                end
+                if cur < min then
+                    min = cur;
+                end
+            end
+        end
+    end
+    escape max - min;
+end
+
+par do
+
+    var int max = 0;
+    var int min = 1023;
+
+    loop do
+        var int cur = await Amp(A0);
+        if cur > ((max * 1.1) as int) then
+            loop do
+                watching 500ms do
+                    loop do
+                        var int tmp = await Amp(A0);
+                        if tmp > cur then
+                            cur = tmp;
+                            continue;
+                        end
+                    end
+                end
+                break;
+            end
+            max = cur;
+            min = cur;
+            var u8 v = _map(max, 0, 1023, 0, 255);
+            _radio_write(&&v, 1);
+            _Serial.print("MAX: ");
+            _Serial.println(max);
+        else/if cur < ((min * 0.9) as int) then
+            loop do
+                watching 500ms do
+                    loop do
+                        var int tmp = await Amp(A0);
+                        if tmp < cur then
+                            cur = tmp;
+                            continue;
+                        end
+                    end
+                end
+                break;
+            end
+            max = cur;
+            min = cur;
+            //var u8 v = _map(min, 0, 1023, 0, 255);
+            //_radio_write(&&v, 1);
+            //_Serial.print("MIN: ");
+            //_Serial.println(min);
+        end
+    end
+
+with
+
+    var int max = 0;
+    var int min = 1023;
+
+    loop do
+        var int cur = await Amp(A7);
+        if cur > ((max * 1.1) as int) then
+            loop do
+                watching 500ms do
+                    loop do
+                        var int tmp = await Amp(A7);
+                        if tmp > cur then
+                            cur = tmp;
+                            continue;
+                        end
+                    end
+                end
+                break;
+            end
+            max = cur;
+            min = cur;
+            var u8 v = _map(max, 0, 1023, 0, 255);
+            _radio_write(&&v, 1);
+            _Serial.print("max: ");
+            _Serial.println(max);
+        else/if cur < ((min * 0.9) as int) then
+            loop do
+                watching 500ms do
+                    loop do
+                        var int tmp = await Amp(A7);
+                        if tmp < cur then
+                            cur = tmp;
+                            continue;
+                        end
+                    end
+                end
+                break;
+            end
+            max = cur;
+            min = cur;
+            //var u8 v = _map(min, 0, 1023, 0, 255);
+            //_radio_write(&&v, 1);
+            //_Serial.print("min: ");
+            //_Serial.println(min);
+        end
+    end
+
+end
