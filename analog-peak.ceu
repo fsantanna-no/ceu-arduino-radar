@@ -96,12 +96,12 @@ with
     var int min = 1023;
 
     loop do
-        var int cur = await Amp(A7);
+        var int cur = await Amp(A1);
         if cur > ((max * 1.1) as int) then
             loop do
                 watching 500ms do
                     loop do
-                        var int tmp = await Amp(A7);
+                        var int tmp = await Amp(A1);
                         if tmp > cur then
                             cur = tmp;
                             continue;
@@ -114,8 +114,8 @@ with
             min = cur;
             var u8 v = _map(max, 0, 1023, 0, 255);
             _radio_write(&&v, 1);
-            _Serial.print("max: ");
-            _Serial.println(max);
+            //_Serial.print("max: ");
+            //_Serial.println(max);
         else/if cur < ((min * 0.9) as int) then
             loop do
                 watching 500ms do

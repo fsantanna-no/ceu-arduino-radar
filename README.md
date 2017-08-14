@@ -1,17 +1,31 @@
 # ceu-arduino-radar
 
+- medir frequencias do movimento e toque
+- medir corrente gasta nos dois projetos
+- calcular tempo de ping para medir a velocidade mais certinho
+    - NRF e Bluetooth 2 e 4
+
+- 120us: tempo de medida do analogRead
+- 200us: tempo seguro para ler o mais rapido que conseguir
+- 512 medidas, cada uma a 200us: 200us*512=524288us = 520ms de jogo
+
 - TODO
     - comprar
-        - placas perfuradas menores
-        - dip switch
-        - conectores para os modulos
-        - mais piezo
-        - bateria e suporte
-        - 2 nanos
-        - 2 radios
-        - 2 audio jacks
+        - cabos miltimetro
+        - resistor 22k (mic), 30/40k (bat)
+        - TP4056 (com proteção?)
+        - baterias pequenas
+        - microfones
+        - fio removedor de solda
+        - esponja solda
+        - 4 radios
+        - 4 pro-mini
+        - Video + Som
+            - Cabo RCA -> P3
+            - P3 jack
+        - Bluetooth 3.3V
+            - v4 ou v2?
 
-- calcular tempo de ping para medir a velocidade mais certinho
 
 - TODO:
     - testar delay do RF

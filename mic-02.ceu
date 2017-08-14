@@ -1,6 +1,6 @@
 #include "arduino/arduino.ceu"
 
-#define MIC_THRESHOLD 30
+#define MIC_THRESHOLD 50
 
 native _radio;
 native/nohold _radio_read, _radio_write;
@@ -50,18 +50,25 @@ code/await Mic (var int pin) -> (event int ok) -> NEVER do
 end
 
 var& Mic mic0 = spawn Mic(A0);
-var& Mic mic7 = spawn Mic(A1);
+var& Mic mic1 = spawn Mic(A1);
+var& Mic mic2 = spawn Mic(A2);
 
 par do
     var int dif0;
     every dif0 in mic0.ok do
-        _Serial.print("MIC-0 ");
+        _Serial.print("000 ");
         _Serial.println(dif0);
     end
 with
-    var int dif7;
-    every dif7 in mic7.ok do
-        _Serial.print("MIC-7 ");
-        _Serial.println(dif7);
+    var int dif1;
+    every dif1 in mic1.ok do
+        _Serial.print("111 ");
+        _Serial.println(dif1);
+    end
+with
+    var int dif2;
+    every dif2 in mic2.ok do
+        _Serial.print("222 ");
+        _Serial.println(dif2);
     end
 end

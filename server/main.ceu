@@ -15,7 +15,6 @@
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
 #define RULE_20
-#define PIEZO_THRESHOLD 100
 
 input  (u8,bool)         IN_TOUCH;
 

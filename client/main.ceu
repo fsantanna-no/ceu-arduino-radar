@@ -1,10 +1,10 @@
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
-#define MIC_THRESHOLD   200
-#define PIEZO_THRESHOLD 400
-#define PIN_FORE        A1
-#define PIN_BACK        A0
+#define MIC_THRESHOLD   100
+#define PIEZO_THRESHOLD XXX
+#define PIN_PIEZO       A1
+#define PIN_MIC         A0
 
 native _radio;
 native/nohold _radio_read, _radio_write;
@@ -30,43 +30,7 @@ end
 _Serial.begin(9600);
 var u8 id = 0;
 
-#if 0
-
-code/await Piezo (var u8 pin) -> (event none ok, var u16 avg, var u16 threshold) -> NEVER do
-    var[5*] u16 vals = [ 0,0,0,0,0 ];
-    var u16 sum = 0;
-    avg = 0;
-    threshold = PIEZO_THRESHOLD;
-    loop do
-        var int v = _analogRead(pin);
-        sum = sum + v - vals[0];
-        $vals = $vals - 1;
-        vals = vals .. [v];
-        avg = sum/5;
-        if avg > threshold then
-//_Serial.println(avg);
-            emit ok;
-        end
-        await async do end;
-    end
-end
-
-var& Piezo sensorF = spawn Piezo(PIN_FORE);
-var& Piezo sensorB = spawn Piezo(PIN_BACK);
-
-code/await Hit (none) -> bool do
-    par/or do
-        await outer.sensorF.ok;
-    with
-        await outer.sensorB.ok;
-    end
-    escape outer.sensorF.avg >= outer.sensorB.avg;
-end
-
-#else
-
-code/await Mic (var int pin) -> (event int ok, var int threshold) -> NEVER do
-    threshold = MIC_THRESHOLD;
+code/await Sensor (var int pin, var int threshold) -> (event int ok) -> NEVER do
     loop do
         var int dif = _;
         await async (pin,threshold,dif) do
@@ -90,9 +54,10 @@ code/await Mic (var int pin) -> (event int ok, var int threshold) -> NEVER do
     end
 end
 
-var& Mic sensorF = spawn Mic(PIN_FORE);
-var& Mic sensorB = spawn Mic(PIN_BACK);
+var& Sensor sensorF = spawn Sensor(PIN_MIC, MIC_THRESHOLD);
+var& Sensor sensorB = spawn Sensor(PIN_PIEZO, PIEZO_THRESHOLD);
 
+#if 0
 code/await Hit (none) -> bool do
     var int f = 0;
     var int b = 0;
@@ -109,10 +74,32 @@ code/await Hit (none) -> bool do
         escape true;
     end
 end
-
 #endif
 
 par do
+
+    loop do
+        await sensorF.ok;
+        _Serial.print("id: ");  _Serial.print(id);
+        _Serial.print(" ");
+        _Serial.print("f/b: "); _Serial.println(true);
+        var u8 v = (id | ((true as u8)<<4));
+        _radio_write(&&v, 1);
+        //id = 1-id;
+        await 200ms;        // skip continuous vibration
+    end
+#if 0
+with
+    loop do
+        await sensorB.ok;
+        _Serial.print("id: ");  _Serial.print(id);
+        _Serial.print(" ");
+        _Serial.print("f/b: "); _Serial.println(false);
+        var u8 v = (id | ((false as u8)<<4));
+        _radio_write(&&v, 1);
+        //id = 1-id;
+        await 200ms;        // skip continuous vibration
+    end
 
     loop do
         var bool is_fore = await Hit();
@@ -124,6 +111,7 @@ par do
         //id = 1-id;
         await 200ms;        // skip continuous vibration
     end
+#endif
 
 with
 
@@ -170,8 +158,8 @@ _Serial.println(v);
         var bool back_inc = (v & {0b00100000}) as bool;
         var bool back_dec = (v & {0b00010000}) as bool;
 
-        sensorF.threshold = sensorF.threshold + (fore_inc as int)*5 - (fore_dec as int);
-        sensorB.threshold = sensorB.threshold + (back_inc as int)*5 - (back_dec as int);
+        sensorF.threshold = sensorF.threshold + (fore_inc as int)*10 - (fore_dec as int)*10;
+        sensorB.threshold = sensorB.threshold + (back_inc as int)*10 - (back_dec as int)*10;
 
         _Serial.print("ID: ");
         _Serial.println(id);
