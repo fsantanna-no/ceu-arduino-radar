@@ -49,6 +49,8 @@ with
 #ifdef OUTPUT_OLED
             _oled.set2X();
             _oled.setCursor(0,3);
+            _oled.print("   ");
+            _oled.setCursor(0,3);
             _oled.print(cfg);
 #else
             #error TODO

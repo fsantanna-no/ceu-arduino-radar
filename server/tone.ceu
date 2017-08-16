@@ -26,20 +26,22 @@ code/await Tone (var uint freq, var bool inc, var int i) -> none do
 end
 
 #if 0
-await Tone_Start;
-await 1s;
-await Tone_End;
-await 1s;
-await Tone_Ball;
-await 1s;
-await Tone_Fall;
-await 1s;
-await Tone_Fore;
-await 1s;
-await Tone_Fore_Attack;
-await 1s;
-await Tone_Back;
-await 1s;
-await Tone_Back_Attack;
-do await FOREVER; end
+loop do
+    await Tone_Start;
+    await 1s;
+    await Tone_End;
+    await 1s;
+    await Tone_Ball;
+    await 1s;
+    await Tone_Fall;
+    await 1s;
+    await Tone_Fore;
+    await 1s;
+    await Tone_Fore_Attack;
+    await 1s;
+    await Tone_Back;
+    await 1s;
+    await Tone_Back_Attack;
+    await 1s;
+end
 #endif

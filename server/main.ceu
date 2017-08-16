@@ -92,7 +92,7 @@ _Serial.println("ok");
 _delay(1000);
 
 #define PIN_TONE 2
-output bool PIN_02;//##PIN_TONE;
+output bool PIN_02;
 
 #define BUT_OK    PIN_03
 #define BUT_PLUS  PIN_04
@@ -111,32 +111,6 @@ do
 end
 #endif
 
-#if 0
-native/pre do
-/*
-    #define PORT_SND    PORTD
-    #define DDR_SND     DDRD
-    #define SND_PIN     2           // SND=2
-    #define PORT_VID    PORTB
-    #define DDR_VID     DDRB
-    #define VID_PIN     2           // VID=10
-    #define PORT_SYNC   PORTB
-    #define DDR_SYNC    DDRB
-    #define SYNC_PIN    1           // SYNC=9
-*/
-    ##include <fontALL.h>
-    ##include <TVout.h>
-    TVout TV;
-end
-{
-      TV.begin(NTSC,120,96);
-      TV.select_font(font6x8);
-      TV.println("Ola");
-tone(2, 1000, 3000);
-      TV.println("Mundo");
-}
-#endif
-
 par do
     //#include "abraf.ceu"
     await FOREVER;
@@ -150,7 +124,6 @@ with
     //#include "debug.ceu"
     await FOREVER;
 with
-#if 0
     loop do
         var u8 idA;
         var u8 idB;
@@ -257,5 +230,4 @@ with
         spawn Tone_End in tones;
         await 5s;
     end
-#endif
 end
