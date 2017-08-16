@@ -1,4 +1,14 @@
-_Serial.println("Config...");
+#ifdef OUTPUT_OLED
+{
+    display.setTextColor(WHITE);
+    display.setTextSize(2);
+    display.setCursor(0,0);
+    display.print(F("Config..."));
+    display.display();
+}
+#else
+_Serial.println(_F("Config..."));
+#endif
 
 par/or do
     var u8 id;
@@ -6,11 +16,16 @@ par/or do
     pool[1] Tone tones;
     loop do
         (id,is_fore) = await IN_TOUCH;
+#ifdef OUTPUT_OLED
+        _display.setCursor(0,0);
+        _display.print(id);
+#else
         {
             Serial.print("id: ");  Serial.print(@id);
             Serial.print(" ");
             Serial.print("f/b: "); Serial.println(@is_fore);
         }
+#endif
         if is_fore then
             spawn Tone_Fore in tones;
         else
@@ -54,12 +69,12 @@ with
             break;
         end
 
-        _Serial.print("F: ");
-        _Serial.println(fore);
-        _Serial.print("B: ");
-        _Serial.println(back);
+        //_Serial.print("F: ");
+        //_Serial.println(fore);
+        //_Serial.print("B: ");
+        //_Serial.println(back);
     end
 
 end
 
-_Serial.println("Start...");
+//_Serial.println("Start...");

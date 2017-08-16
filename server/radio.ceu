@@ -43,11 +43,13 @@ spawn do
                 _radio_read(&&v, 1);
                 var u8   id      = (v & 0xF);
                 var bool is_fore = (v >> 4)  as bool;
+#if 0
                 {
                     Serial.print("id: ");  Serial.print(@id);
                     Serial.print(" ");
                     Serial.print("f/b: "); Serial.println(@is_fore);
                 }
+#endif
                 emit IN_TOUCH(id, is_fore);
             end
             //await 200ms;    // skip storm
