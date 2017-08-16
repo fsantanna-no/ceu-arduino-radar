@@ -1,14 +1,4 @@
-native _radio;
-native/nohold _radio_read, _radio_write;
 native/pos do
-    ##include <SPI.h>
-    ##include <nRF24L01.h>
-    ##include <RF24.h>
-    ##define radio_read(a,b) radio.read(a,b)
-    ##define radio_write(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
-    const uint64_t pipe =  0xAABBCCDDEELL;
-    RF24 radio(8,7);
-
     tceu_callback_ret CB_INPUT_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
         tceu_callback_ret ret = { .is_handled=0 };
         if (cmd != CEU_CALLBACK_OUTPUT) {
@@ -24,9 +14,22 @@ native/pos do
     }
     tceu_callback CB_INPUT = { &CB_INPUT_F, NULL };
 end
+{ ceu_callback_register(&CB_INPUT); }
+
+#if 0
+native _radio;
+native/nohold _radio_read, _radio_write;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+    ##define radio_read(a,b) radio.read(a,b)
+    ##define radio_write(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
+    const uint64_t pipe =  0xAABBCCDDEELL;
+    RF24 radio(8,7);
+end
 
 {
-    ceu_callback_register(&CB_INPUT);
     radio.begin();
     radio.setAutoAck(false);              // true by default
     radio.setDataRate(RF24_1MBPS);
@@ -58,3 +61,17 @@ spawn do
         end
     end
 end
+#else
+spawn do
+    loop do
+        var int id = 0;
+        loop do
+            await PIN_BUT;
+            await async (id) do
+                emit IN_TOUCH(id, true);
+            end
+            id = 1 - id;
+        end
+    end
+end
+#endif
