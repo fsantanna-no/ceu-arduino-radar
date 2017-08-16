@@ -4,9 +4,9 @@
 TX      Bluetooth
 RX      Bluetooth
 D2      Sound
-D3
-D4      Botao
-D5
+D3      Botao OK
+D4      Botao PLUS
+D5      Botao MINUS
 D6
 D7      Radio
 D8      Radio
@@ -44,6 +44,7 @@ A6      OLED
 #define RULE_20
 
 input  (u8,bool)         IN_TOUCH;
+input  int               IN_CONFIG;
 
 output &u32              GET_TIME;
 
@@ -57,6 +58,18 @@ output (u16,u8,u32,bool) OUT_TOUCH;             // touch, id, dt
 input byte SERIAL_RECEIVE_BYTE;
 
 #ifdef OUTPUT_OLED
+#if 1
+native _oled;
+native/pre do
+    ##include "SSD1306Ascii.h"
+    ##include "SSD1306AsciiAvrI2c.h"
+    SSD1306AsciiAvrI2c oled;
+end
+{
+    oled.begin(&Adafruit128x64, 0x3C);
+    oled.setFont(font8x8);
+}
+#else
 native _display;
 native/pre do
     ##include <SPI.h>
@@ -71,21 +84,28 @@ native/pre do
 end
 {
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-    display.clearDisplay();
 }
 #endif
+#endif
+
+_Serial.println("ok");
+_delay(1000);
 
 #define PIN_TONE 2
 output bool PIN_02;//##PIN_TONE;
 
-#define PIN_BUT  4
-output bool PIN_04;//##PIN_TONE;
+#define BUT_OK    PIN_03
+#define BUT_PLUS  PIN_04
+#define BUT_MINUS PIN_05
+input on/off BUT_OK;
+input on/off BUT_PLUS;
+input on/off BUT_MINUS;
 
 #ifdef DEBUG
 #include "tests.ceu"
 #else
 #include "tone.ceu"
-#include "radio.ceu"
+#include "input.ceu"
 do
     #include "config.ceu"
 end
