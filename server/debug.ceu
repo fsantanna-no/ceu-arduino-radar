@@ -7,10 +7,18 @@ _oled.set1X();
 _oled.print(_F("Modo Debug..."));
 await 1s;
 
+// reset on out_game_ini
+var[3] u16 m_atas;
+var    u16 m_par   = _;
+var    u32 m_total = _;
+
 par do
     every out_game_ini do
         _oled.clear();
         _oled.print(_F("Inicio do Jogo!"));
+        m_atas  = [0,0,0];
+        m_total = 0;
+        m_par   = 0;
     end
 with
     var u16 seqs;
@@ -32,17 +40,19 @@ with
     var u16 seq;
     var u32 dt;
     every (seq,dt) in out_sequence_end do
-        _oled.setCursor(0,5);
+        _oled.setCursor(0,7);
         _oled.print(_F("duracao "));
         _oled.print(dt);
     end
 with
     var u16 seq;
     every seq in out_sequence_fall do
-        _oled.setCursor(60,3);
+        _oled.setCursor(55,3);
         _oled.print(_F(" X "));
     end
 with
+    var u32 cur = 0;
+
     var u16  touch;
     var u8   id;
     var u32  dt;
@@ -56,12 +66,33 @@ with
         _oled.print(dt);
         _oled.print(_F("  "));
 
-        _oled.setCursor(60,3);
+        _oled.setCursor(55,3);
         _oled.print(touch);
         if is_att then
             _oled.print(_F("*"));
         else
             _oled.print(_F(" "));
+        end
+
+        if is_att then
+            m_atas[id] = m_atas[id] + 1;
+        end
+        if touch == 1 then
+            cur = 0;
+        end
+        cur = cur + dt;
+        if touch%2 == 0 then
+            m_total = m_total + cur;
+            m_par   = m_par + 1;
+            _oled.setCursor(0,5);
+            _oled.print(cur);
+            _oled.print(_F("/"));
+            _oled.print((m_total/m_par) as int);
+            _oled.print(_F(" | "));
+            _oled.print(m_atas[0]);
+            _oled.print(_F("/"));
+            _oled.print(m_atas[1]);
+            cur = 0;
         end
     end
 end
