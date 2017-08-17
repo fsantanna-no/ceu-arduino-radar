@@ -58,7 +58,6 @@ event  (u16,u8,u32,bool) out_touch;             // touch, id, dt, is_att
 input byte SERIAL_RECEIVE_BYTE;
 
 #ifdef OUTPUT_OLED
-#if 1
 native _oled;
 native/pre do
     ##include "SSD1306Ascii.h"
@@ -70,22 +69,7 @@ end
     oled.setFont(font8x8);
 }
 #else
-native _display;
-native/pre do
-    ##include <SPI.h>
-    ##include <Wire.h>
-    ##include <Adafruit_GFX.h>
-    ##include <Adafruit_SSD1306.h>
-    ##define OLED_RESET 4
-    Adafruit_SSD1306 display(OLED_RESET);
-    ##if (SSD1306_LCDHEIGHT != 64)
-    ##error("Height incorrect, please fix Adafruit_SSD1306.h!");
-    ##endif
-end
-{
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-}
-#endif
+#error TODO
 #endif
 
 _Serial.println("ok");

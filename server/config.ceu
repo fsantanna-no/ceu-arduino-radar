@@ -44,24 +44,24 @@ do
                 watching 500ms do
                     var int but_ = await IN_CONFIG until but_==0;
                     var byte v = 0;
-                    //_radio_write(&&v, 1);
+                    _radio_write(&&v, 1);
                     break/i;
                 end
-                var byte v = (id << 4);
-                //_radio_write(&&v, 1);
+                var byte v = id;
+                _radio_write(&&v, 1);
                 break;
             end
 
             _ceu_dbg_assert(but==1 or but==-1);
             cfg = cfg + but*10;
 
-            var byte v = (id << 4);
+            var byte v = id;
             if but == 1 then
-                v = v | {0b00000010};
+                v = v | {0b00100000};
             else
-                v = v | {0b00000001};
+                v = v | {0b00010000};
             end
-            //_radio_write(&&v, 1);
+            _radio_write(&&v, 1);
         end
     end
 end

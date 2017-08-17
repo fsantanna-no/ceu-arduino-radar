@@ -18,7 +18,6 @@ end
 
 spawn do
     par do
-#if 0
         native _radio;
         native/nohold _radio_read, _radio_write;
         native/pos do
@@ -40,27 +39,22 @@ spawn do
             radio.openWritingPipe(pipe);
         }
 
-            loop do
-                if _radio.available() as bool then
-                    await async do
-                        var u8 v = _;
-                        _radio_read(&&v, 1);
-                        var u8   id      = (v & 0xF);
-                        var bool is_fore = (v >> 4)  as bool;
-                        {
-                            Serial.print("id: ");  Serial.print(@id);
-                            Serial.print(" ");
-                            Serial.print("f/b: "); Serial.println(@is_fore);
-                        }
-                        emit IN_TOUCH(id, is_fore);
-                    end
-                    //await 200ms;    // skip storm
-                else
-                    await async do end;
+        loop do
+            if _radio.available() as bool then
+                await async do
+                    var u8 v = _;
+                    _radio_read(&&v, 1);
+                    var u8 id = (v & {0b00001111});
+                    {
+                        Serial.print("touch: ");  Serial.println(@id);
+                    }
+                    emit IN_TOUCH(id);
                 end
+                //await 200ms;    // skip storm
+            else
+                await async do end;
             end
         end
-#endif
     with
         var bool ok = false;
         par do
