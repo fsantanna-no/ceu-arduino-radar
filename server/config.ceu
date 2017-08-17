@@ -25,16 +25,16 @@ par/or do
         end
     end
 with
-    var int id  = 1;
+    var int id = 2;
     var int i;
     loop i do
-        id = 1 - id;
+        id = 3 - id;
 
 #ifdef OUTPUT_OLED
         _oled.clear();
         _oled.set1X();
         _oled.print(_F("Config "));
-        if id == 0 then
+        if id == 1 then
             _oled.print(_F("ESQ..."));
         else
             _oled.print(_F("DIR..."));
@@ -60,8 +60,12 @@ with
             if but == 0 then
                 watching 500ms do
                     var int but_ = await IN_CONFIG until but_==0;
+                    var byte v = 0;
+                    //_radio_write(&&v, 1);
                     break/i;
                 end
+                var byte v = (id << 4);
+                //_radio_write(&&v, 1);
                 break;
             end
 
@@ -78,5 +82,17 @@ with
         end
     end
 end
+
+// TODO: await confirms
+
+#ifdef OUTPUT_OLED
+    _oled.clear();
+    _oled.set1X();
+    _oled.print(_F("Config OK!"));
+#else
+    #error TODO
+#endif
+
+await 1s;
 
 //_Serial.println("Start...");
