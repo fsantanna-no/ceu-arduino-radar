@@ -117,9 +117,11 @@ loop do
 #endif
                     end
 
+                    var u16  touch;
                     var u8   id;
                     var u32  ms;
-                    (_,id,ms,_) = await out_touch;
+                    var bool is_att;
+                    (touch,id,ms,is_att) = await out_touch;
 
                     do
                         if id == 1 then
@@ -129,6 +131,14 @@ loop do
                         end
                         _oled.print(ms);
                         _oled.print(_F("  "));
+
+                        _oled.setCursor(55,2);
+                        _oled.print(touch);
+                        if is_att then
+                            _oled.print(_F("*"));
+                        else
+                            _oled.print(_F("  "));
+                        end
                     end
 
                     do
