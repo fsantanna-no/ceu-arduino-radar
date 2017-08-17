@@ -6,34 +6,30 @@
 #define PIN_PIEZO       A1
 #define PIN_MIC         A0
 
+#define EEPROM_ID 0
+#define EEPROM_S1 1
+
+native/pre do
+    ##include <EEPROM.h>
+end
+
 native _radio;
-native/nohold _radio_read, _radio_write;
+native/nohold _radio_read, _radio_write, _radio_write_read;
 native/pos do
     ##include <SPI.h>
     ##include <nRF24L01.h>
     ##include <RF24.h>
     ##define radio_read(a,b)  radio.read(a,b)
-    ##define radio_write(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
+    ##define radio_write(a,b) { for (int i=0; i<1; i++) { radio.write(a,b); } }
+    ##define radio_write_read(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
     const uint64_t pipe =  0xAABBCCDDEELL;
     RF24 radio(8,7);
 end
 
-{ 
-    radio.begin();
-    radio.setAutoAck(false);              // true by default
-    radio.setDataRate(RF24_1MBPS);
-    radio.openReadingPipe(1,pipe);
-    radio.startListening();
-    radio.openWritingPipe(pipe);
-}
-
-_Serial.begin(9600);
-var u8 id = 0;
-
-code/await Sensor (var int pin, var int threshold) -> (event int ok) -> NEVER do
+code/await Sensor (var int pin, var int threshold_ini, var s8 threshold_acc) -> (event int ok) -> NEVER do
     loop do
         var int dif = _;
-        await async (pin,threshold,dif) do
+        await async (pin,threshold_ini,threshold_acc,dif) do
             var int max = 0;
             var int min = 1023;
             loop do
@@ -45,7 +41,7 @@ code/await Sensor (var int pin, var int threshold) -> (event int ok) -> NEVER do
                     min = cur;
                 end
                 dif = max - min;
-                if dif >= threshold then
+                if dif >= (threshold_ini + threshold_acc*10) then
                     break;
                 end
             end
@@ -54,65 +50,33 @@ code/await Sensor (var int pin, var int threshold) -> (event int ok) -> NEVER do
     end
 end
 
-var& Sensor sensorF = spawn Sensor(PIN_MIC, MIC_THRESHOLD);
-var& Sensor sensorB = spawn Sensor(PIN_PIEZO, PIEZO_THRESHOLD);
+{
+    radio.begin();
+    radio.setAutoAck(false);              // true by default
+    radio.setDataRate(RF24_1MBPS);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+    radio.openWritingPipe(pipe);
+}
 
-#if 0
-code/await Hit (none) -> bool do
-    var int f = 0;
-    var int b = 0;
-    par/or do
-        b = await outer.sensorB.ok;
-        await 10us;
-    with
-        f = await outer.sensorF.ok;
-        await 10us;
-    end
-    if (b as u32)*outer.sensorF.threshold > (f as u32)*outer.sensorB.threshold then
-        escape false;
-    else
-        escape true;
-    end
-end
-#endif
+_Serial.begin(9600);
+
+var  yes/no in_cfg = yes;
+var  u8     id     = {EEPROM[EEPROM_ID]};
+var& Sensor s1     = spawn Sensor(PIN_MIC, MIC_THRESHOLD, ({EEPROM[EEPROM_S1]} as s8));
 
 par do
-
     loop do
-        await sensorF.ok;
-        _Serial.print("id: ");  _Serial.print(id);
-        _Serial.print(" ");
-        _Serial.print("f/b: "); _Serial.println(true);
-        var u8 v = (id | ((true as u8)<<4));
-        _radio_write(&&v, 1);
-        //id = 1-id;
-        await 200ms;        // skip continuous vibration
+        await s1.ok;
+        _Serial.print("id: ");  _Serial.println(id);
+        if in_cfg then
+            _radio_write_read(&&id, 1);
+        else
+            _radio_write(&&id, 1);
+        end
+        id = 3-id;
+        await 200ms;        // skip continuous "s1.ok" vibration
     end
-#if 0
-with
-    loop do
-        await sensorB.ok;
-        _Serial.print("id: ");  _Serial.print(id);
-        _Serial.print(" ");
-        _Serial.print("f/b: "); _Serial.println(false);
-        var u8 v = (id | ((false as u8)<<4));
-        _radio_write(&&v, 1);
-        //id = 1-id;
-        await 200ms;        // skip continuous vibration
-    end
-
-    loop do
-        var bool is_fore = await Hit();
-        _Serial.print("id: ");  _Serial.print(id);
-        _Serial.print(" ");
-        _Serial.print("f/b: "); _Serial.println(is_fore);
-        var u8 v = (id | ((is_fore as u8)<<4));
-        _radio_write(&&v, 1);
-        //id = 1-id;
-        await 200ms;        // skip continuous vibration
-    end
-#endif
-
 with
 
     /* READ CONFIGURATION */
@@ -135,37 +99,37 @@ _Serial.println(v);
         escape ret;
     end
 
-    _Serial.print("Config...");
+    _Serial.println("Config...");
 
     _Serial.print("ID: ");
     _Serial.println(id);
-    _Serial.print("F: ");
-    _Serial.println(sensorF.threshold);
-    _Serial.print("B: ");
-    _Serial.println(sensorB.threshold);
+    _Serial.print("S1: ");
+    _Serial.println(s1.threshold_acc);
 
     loop do
         var byte v = await Read();
 
         if v == 0 then
+            in_cfg = false;
+            _radio.stopListening();
             _Serial.println("Start...");
             await FOREVER;
         end
 
-        id = (v & {0b00001111}) as u8;
-        var bool fore_inc = (v & {0b10000000}) as bool;
-        var bool fore_dec = (v & {0b01000000}) as bool;
-        var bool back_inc = (v & {0b00100000}) as bool;
-        var bool back_dec = (v & {0b00010000}) as bool;
+                  id = (v & {0b00001111}) as u8;
+        var bool dec = (v & {0b00010000}) as bool;
+        var bool inc = (v & {0b00100000}) as bool;
 
-        sensorF.threshold = sensorF.threshold + (fore_inc as int)*10 - (fore_dec as int)*10;
-        sensorB.threshold = sensorB.threshold + (back_inc as int)*10 - (back_dec as int)*10;
+        s1.threshold_acc = s1.threshold_acc + (inc as int) - (dec as int);
 
         _Serial.print("ID: ");
         _Serial.println(id);
-        _Serial.print("F: ");
-        _Serial.println(sensorF.threshold);
-        _Serial.print("B: ");
-        _Serial.println(sensorB.threshold);
+        _Serial.print("S1: ");
+        _Serial.println(s1.threshold_acc);
+
+        {
+            EEPROM[EEPROM_ID] = @id;
+            EEPROM[EEPROM_S1] = @s1.threshold_acc;
+        }
     end
 end
