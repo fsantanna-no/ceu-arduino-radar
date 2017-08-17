@@ -35,8 +35,8 @@ A6      OLED
         - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
 #endif
 
-//#define MS_TO_GAME              10000           // 10 seconds
-#define MS_TO_GAME              30000           // 30 seconds
+#define MS_TO_GAME              10000           // 10 seconds
+//#define MS_TO_GAME              30000           // 30 seconds
 //#define MS_TO_GAME              {300000LL}      // 5 minutes
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
@@ -48,12 +48,12 @@ input  int               IN_CONFIG;
 
 output &u32              GET_TIME;
 
-output (u8,u8)           OUT_GAME_INI;          // idA, idB
-output u16               OUT_GAME_END;          // #seqs
-output u16               OUT_SEQUENCE_INI;      // seq
-output (u16,u32)         OUT_SEQUENCE_END;      // seq, dt
-output u16               OUT_SEQUENCE_FALL;     // seq
-output (u16,u8,u32,bool) OUT_TOUCH;             // touch, id, dt
+event  (u8,u8)           out_game_ini;          // idA, idB
+event  u16               out_game_end;          // #seqs
+event  u16               out_sequence_ini;      // seq
+event  (u16,u32)         out_sequence_end;      // seq, dt
+event  u16               out_sequence_fall;     // seq
+event  (u16,u8,u32,bool) out_touch;             // touch, id, dt
 
 input byte SERIAL_RECEIVE_BYTE;
 
@@ -111,6 +111,10 @@ do
 end
 #endif
 
+spawn do
+    #include "debug.ceu"
+end
+
 par do
     //#include "abraf.ceu"
     await FOREVER;
@@ -121,17 +125,14 @@ with
     //#include "media.ceu"
     await FOREVER;
 with
-    //#include "debug.ceu"
-    await FOREVER;
-with
     loop do
         var u8 idA;
         var u8 idB;
         (idA,_) = await IN_TOUCH;
         (idB,_) = await IN_TOUCH until (idA != idB);
-        _ceu_dbg_assert(idA+idB == 1);
+        _ceu_dbg_assert(idA+idB == 3);
 
-        emit OUT_GAME_INI(idA,idB);
+        emit out_game_ini(idA,idB);
         spawn Tone_Start;
         await 500ms;                                    // skip storm
 
@@ -139,12 +140,14 @@ with
 
         pool[2] Tone tones;
 
+        await (MS_TO_FALL)ms;
+
         var u16 seq;
         loop seq in [1 -> _[ do
             var[2*] u32 ms;
             var u32 ms_0 = _;
 
-            emit OUT_SEQUENCE_INI(seq);
+            emit out_sequence_ini(seq);
             do finalize with
                 var u32 dt = do
                     if $ms >= 2 then
@@ -153,12 +156,12 @@ with
                         escape 0;
                     end
                 end;
-                emit OUT_SEQUENCE_END(seq,dt);
+                emit out_sequence_end(seq,dt);
             end
 
             var u8 id1;
             (id1,_) = await IN_TOUCH;                // start counting after 0th touch
-            //emit OUT_TOUCH(0, id1, -1);
+            //emit out_touch(0, id1, -1);
             spawn Tone_Ball in tones;
 
             do
@@ -199,7 +202,7 @@ with
 #endif
                     end;
 
-                    emit OUT_TOUCH(touch, id1, dt, is_att);
+                    emit out_touch(touch, id1, dt, is_att);
                     if is_fore then
                         if is_att then
                             spawn Tone_Fore_Attack in tones;
@@ -222,11 +225,11 @@ with
                 end
             end
 
-            emit OUT_SEQUENCE_FALL(seq);
+            emit out_sequence_fall(seq);
             spawn Tone_Fall in tones;
         end
 
-        emit OUT_GAME_END(seq);
+        emit out_game_end(seq);
         spawn Tone_End in tones;
         await 5s;
     end
