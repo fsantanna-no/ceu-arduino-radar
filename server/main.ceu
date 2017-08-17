@@ -38,7 +38,6 @@ A6      OLED
 #define MS_TO_GAME              10000           // 10 seconds
 //#define MS_TO_GAME              30000           // 30 seconds
 //#define MS_TO_GAME              {300000LL}      // 5 minutes
-#define MS_TO_SEQUENCE          1000            // 1 seconds
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
@@ -123,9 +122,6 @@ par do
     //#include "chico.ceu"
     await FOREVER;
 with
-    //#include "media.ceu"
-    await FOREVER;
-with
     loop do
         var u8 idA;
         var u8 idB;
@@ -146,7 +142,10 @@ with
             var[2*] u32 ms;
             var u32 ms_0 = _;
 
-            await (MS_TO_SEQUENCE)ms;
+            var u8 id1;
+            (id1,_) = await IN_TOUCH;                // start counting after 0th touch
+            //emit out_touch(0, id1, -1);
+
             emit out_sequence_ini(seq);
             do finalize with
                 var u32 dt = do
@@ -159,9 +158,6 @@ with
                 emit out_sequence_end(seq,dt);
             end
 
-            var u8 id1;
-            (id1,_) = await IN_TOUCH;                // start counting after 0th touch
-            //emit out_touch(0, id1, -1);
             spawn Tone_Ball in tones;
 
             do
