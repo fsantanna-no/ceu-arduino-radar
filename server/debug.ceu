@@ -43,7 +43,7 @@ with
 with
     var u16 seq;
     every seq in out_sequence_fall do
-        _oled.setCursor(55,3);
+        _oled.setCursor(60,3);
         _oled.print(_F(" X "));
     end
 with
@@ -55,12 +55,12 @@ with
         if id == 1 then
             _oled.setCursor(0,3);
         else
-            _oled.setCursor(90,3);
+            _oled.setCursor(95,3);
         end
         _oled.print(dt);
         _oled.print(_F("  "));
 
-        _oled.setCursor(55,3);
+        _oled.setCursor(60,3);
         _oled.print(touch);
         if is_att then
             _oled.print(_F("*"));
