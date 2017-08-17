@@ -53,7 +53,7 @@ do
             end
 
             _ceu_dbg_assert(but==1 or but==-1);
-            cfg = cfg + but*10;
+            cfg = cfg + but;
 
             var byte v = id;
             if but == 1 then
