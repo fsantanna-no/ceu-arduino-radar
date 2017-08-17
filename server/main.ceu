@@ -41,7 +41,7 @@ A6      OLED
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
-#define RULE_20
+#define RULE_20_PCT
 
 input  u8                IN_TOUCH;
 input  int               IN_CONFIG;
@@ -117,99 +117,103 @@ end
 spawn do
     #include "abraf.ceu"
 end
-
-par do
+//spawn do
     //#include "chico.ceu"
-    await FOREVER;
-with
+//end
+
+pool[2] Tone tones;
+
+loop do
+    // await double click
     loop do
-        emit out_game_ini;
-        spawn Tone_Start;
-        await 500ms;                                    // skip storm
+        var int but = await IN_CONFIG until but==0;
+        watching 500ms do
+            but = await IN_CONFIG until but==0;
+            break;
+        end
+    end
 
-        var u32 ms_game = 0;                            // total game time
+    var u32 ms_game = 0;                            // total game time
+    emit out_game_ini;
+    spawn Tone_Start;
 
-        pool[2] Tone tones;
+    var u16 seq;
+    loop seq in [1 -> _[ do
+        var[2*] u32 ms;
+        var u32 ms_0 = _;
 
-        var u16 seq;
-        loop seq in [1 -> _[ do
-            var[2*] u32 ms;
-            var u32 ms_0 = _;
+        var u8 idA = await IN_TOUCH;                // start counting after 0th touch
+        //emit out_touch(0, idA, -1);
 
-            var u8 idA = await IN_TOUCH;                // start counting after 0th touch
-            //emit out_touch(0, idA, -1);
-
-            emit out_sequence_ini(seq);
-            do finalize with
-                var u32 dt = do
-                    if $ms >= 2 then
-                        escape ms[$ms-1] - ms_0;        // ms difference between last and 0th touch
-                    else
-                        escape 0;
-                    end
-                end;
-                emit out_sequence_end(seq,dt);
-            end
-
-            spawn Tone_Ball in tones;
-
-            do
-                var u32 now = _;
-                emit GET_TIME(&now);
-                ms = ms .. [now];
-                ms_0 = now;
-            end
-
-#ifdef RULE_20
-            var u32? old;
-#endif
-            var u16 touch;
-            loop touch in [1 -> _[ do                   // TRACK TOUCHES
-                par/or do                               // track fall
-                    await (MS_TO_FALL)ms;
-                    break;
-                with                                    // alternate touches between idA/idB
-                    var u8 idB = await IN_TOUCH until (idB != idA);
-                    do
-                        var u32 now = _;
-                        emit GET_TIME(&now);
-                        if $ms == $$ms then
-                            $ms = $ms - 1;
-                        end
-                        ms = ms .. [now];
-                    end
-                    var u32 dt = ms[$ms-1]-ms[$ms-2];
-                    var bool is_att = do
-#ifdef RULE_20
-                        var bool ret = (touch > 1) and (dt <= (old! as real)*0.8);
-                        old = dt;
-                        escape ret;
-#else
-                        escape (dt <= ATTACK_THRESHOLD_IN_MS);
-#endif
-                    end;
-
-                    emit out_touch(touch, idA, dt, is_att);
-                    if is_att then
-                        spawn Tone_Attack in tones;
-                    else
-                        spawn Tone_Touch in tones;
-                    end
-                    idA = idB;
-
-                    ms_game = ms_game + dt;
-                    if ms_game >= MS_TO_GAME then       // CHECK TOTAL GAME TIME
-                        break/seq;
-                    end
+        emit out_sequence_ini(seq);
+        do finalize with
+            var u32 dt = do
+                if $ms >= 2 then
+                    escape ms[$ms-1] - ms_0;        // ms difference between last and 0th touch
+                else
+                    escape 0;
                 end
-            end
-
-            emit out_sequence_fall(seq);
-            spawn Tone_Fall in tones;
+            end;
+            emit out_sequence_end(seq,dt);
         end
 
-        emit out_game_end(seq);
-        spawn Tone_End in tones;
-        await 5s;
+        spawn Tone_Ball in tones;
+
+        do
+            var u32 now = _;
+            emit GET_TIME(&now);
+            ms = ms .. [now];
+            ms_0 = now;
+        end
+
+#ifdef RULE_20_PCT
+        var u32? old;
+#endif
+        var u16 touch;
+        loop touch in [1 -> _[ do                   // TRACK TOUCHES
+            par/or do                               // track fall
+                await (MS_TO_FALL)ms;
+                break;
+            with                                    // alternate touches between idA/idB
+                var u8 idB = await IN_TOUCH until (idB != idA);
+                do
+                    var u32 now = _;
+                    emit GET_TIME(&now);
+                    if $ms == $$ms then
+                        $ms = $ms - 1;
+                    end
+                    ms = ms .. [now];
+                end
+                var u32 dt = ms[$ms-1]-ms[$ms-2];
+                var bool is_att = do
+#ifdef RULE_20_PCT
+                    var bool ret = (touch > 1) and (dt <= (old! as real)*0.8);
+                    old = dt;
+                    escape ret;
+#else
+                    escape (dt <= ATTACK_THRESHOLD_IN_MS);
+#endif
+                end;
+
+                emit out_touch(touch, idA, dt, is_att);
+                if is_att then
+                    spawn Tone_Attack in tones;
+                else
+                    spawn Tone_Touch in tones;
+                end
+                idA = idB;
+
+                ms_game = ms_game + dt;
+                if ms_game >= MS_TO_GAME then       // CHECK TOTAL GAME TIME
+                    break/seq;
+                end
+            end
+        end
+
+        emit out_sequence_fall(seq);
+        spawn Tone_Fall in tones;
     end
+
+    emit out_game_end(seq);
+    spawn Tone_End in tones;
 end
