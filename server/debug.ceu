@@ -1,3 +1,7 @@
+#ifndef OUTPUT_OLED
+    #error TODO
+#endif
+
 _oled.clear();
 _oled.set1X();
 _oled.print(_F("Modo Debug..."));
@@ -5,25 +9,17 @@ await 1s;
 
 par do
     every out_game_ini do
-#ifdef OUTPUT_OLED
         _oled.clear();
         _oled.print(_F("Inicio do Jogo!"));
-#else
-        #error TODO
-#endif
     end
 with
     var u16 seqs;
     every seqs in out_game_end do
-#ifdef OUTPUT_OLED
         _oled.clear();
         _oled.print(_F("Fim do Jogo!"));
         _oled.setCursor(0,3);
         _oled.print(seqs);
         _oled.print(_F(" sequencia(s)"));
-#else
-        #error TODO
-#endif
     end
 with
     var u16 seq;
