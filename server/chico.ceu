@@ -1,137 +1,143 @@
+#ifndef OUTPUT_OLED
+    #error TODO
+#endif
+
+#define TERNARY(c,t,f) do if c then escape t; else escape f; end end;
+#define _pow2(v) ((v*v) as real)
+
 native/pos do
     ##include <math.h>
-
-    double ms2pts (u32 ms) {
-        return 8000000.0 / (ms*16.0);
-    }
-
-    u16    _c_touches = 0;
-    u32    _c_vel     = 0;
-    double _c_pot     = 0;
-    u32    _c_equ[2]  = { 0, 0 };
-    u16    _c_tch[2]  = { 0, 0 };
-
-    u16    c_touches  = 0;
-    u32    c_vel      = 0;
-    double c_pot      = 0;
-    u32    c_equ[2]   = { 0, 0 };
-    u16    c_tch[2]   = { 0, 0 };
-
-    double C_EQU = 0;
-    u32    C_DT  = 0;
-    u32    c_dt  = 0;
-
-    u16    c_seq = 0;
-
-    tceu_callback_ret CB_CHICO_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
-        tceu_callback_ret ret = { .is_handled=0 };
-        if (cmd != CEU_CALLBACK_OUTPUT) {
-            return ret;
-        }
-        switch (p1.num) {
-            case CEU_OUTPUT_OUT_GAME_INI: {
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)">>>\r\n");
-                break;
-            }
-            case CEU_OUTPUT_OUT_GAME_END: {
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"<<<\r\n");
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_INI: {
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"---\r\n");
-                c_touches = 0;
-                c_vel     = 0;
-                c_pot     = 0;
-
-                c_equ[0]  = 0;
-                c_equ[1]  = 0;
-                c_tch[0]  = 0;
-                c_tch[1]  = 0;
-
-                c_dt = 0;
-
-                c_seq += 1;
-
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_END: {
-                tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
-                double equ0 = (c_tch[0]==0) ? 9999 : c_equ[0]/(double)c_tch[0];
-                double equ1 = (c_tch[1]==0) ? 9999 : c_equ[1]/(double)c_tch[1];
-                double equ = sqrt((equ0*equ0 + equ1*equ1) / 2);
-                C_EQU += ms2pts(equ) * ps->_2;
-                C_DT  += ps->_2;
-                ceu_dbg_assert(c_dt == ps->_2);
-                break;
-            }
-            case CEU_OUTPUT_OUT_TOUCH: {
-                tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
-                u16 touch = ps->_1;
-                u8  id    = ps->_2;
-                u32 ms    = ps->_3;
-
-                c_touches  += 1;
-                c_vel      += ms;
-                c_pot      += sqrt(ms);
-                _c_touches += 1;
-                _c_vel     += ms;
-                _c_pot     += sqrt(ms);
-
-                c_equ[id]  += ms;
-                c_tch[id]  += 1;
-                _c_equ[id] += ms;
-                _c_tch[id] += 1;
-
-                double EQU;
-                c_dt += ms;
-
-                {
-                    char str[20];
-                    snprintf(str, 20, "%d | ms: %4ld\r\n", id, ms);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-
-                {
-                    double vel = c_vel / (double)c_touches;
-                    double pot = c_pot / (double)c_touches;
-                                 pot = pot*pot;
-
-                    double equ0 = (c_tch[0]==0) ? 9999 : c_equ[0]/(double)c_tch[0];
-                    double equ1 = (c_tch[1]==0) ? 9999 : c_equ[1]/(double)c_tch[1];
-                    double equ = sqrt((equ0*equ0 + equ1*equ1) / 2);
-
-                    EQU = (C_EQU + ms2pts(equ)*c_dt) / (C_DT + c_dt);
-
-                    char str[128];
-                    snprintf(str, 128, "- vel: %4d/%4d | pot: %4d/%4d | equ: %4d/%4d\r\n",
-                                       (u16)vel, (u16)ms2pts(vel), (u16)pot, (u16)ms2pts(pot),
-                                       (u16)equ, (u16)ms2pts(equ));
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-
-                {
-                    double vel = _c_vel / (double)_c_touches;
-                    double pot = _c_pot / (double)_c_touches;
-                                 pot = pot*pot;
-
-                    double equ0 = (_c_tch[0]==0) ? 9999 : _c_equ[0]/(double)_c_tch[0];
-                    double equ1 = (_c_tch[1]==0) ? 9999 : _c_equ[1]/(double)_c_tch[1];
-                    double equ = sqrt((equ0*equ0 + equ1*equ1) / 2);
-
-                    u16 falls = c_seq - 1 + 1; // assume an imminent fall
-                    falls = ceil(falls*MS_TO_GAME / (double)(C_DT+c_dt));
-
-                    char str[128];
-                    snprintf(str, 128, "+ vel: %4d/%4d | pot: %4d/%4d | equ: %4d/%4d/%4d | seq: %2d\r\n",
-                                       (u16)vel, (u16)ms2pts(vel), (u16)pot, (u16)ms2pts(pot),
-                                       (u16)equ, (u16)ms2pts(equ), (u16)EQU, falls+1);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-                break;
-            }
-        }
-        return ret;
-    }
-    tceu_callback CB_CHICO = { &CB_CHICO_F, NULL };
 end
-{ ceu_callback_register(&CB_CHICO); }
+
+data Data with
+    var    u16  touches = 0;
+    var    u32  vel     = 0;
+    var    real vol     = 0;
+    var    real pot     = 0;
+    var[3] u32  equ     = [ 0, 0, 0 ];
+    var[3] u16  tch     = [ 0, 0, 0 ];
+end
+
+var Data loc = _;
+var Data glb = _;
+
+var real g_equ = 0;
+var u32  g_dt  = 0;
+var u32  dt    = 0;
+
+var u16  seq   = 0;
+
+par do
+    every out_game_ini do
+        _oled.clear();
+        _oled.print(_F("Inicio do Jogo!"));
+    end
+with
+    var u16 seqs;
+    every seqs in out_game_end do
+        _oled.clear();
+        _oled.print(_F("Fim do Jogo!"));
+        _oled.setCursor(0,3);
+        _oled.print(seqs);
+        _oled.print(_F(" sequencia(s)"));
+    end
+with
+    every out_sequence_ini do
+        loc.touches = 0;
+        loc.vel     = 0;
+        loc.vol     = 0;
+        loc.pot     = 0;
+
+        loc.equ[0]  = 0;
+        loc.equ[1]  = 0;
+        loc.tch[0]  = 0;
+        loc.tch[1]  = 0;
+
+        dt = 0;
+
+        seq = seq + 1;
+    end
+with
+    //var u16 seq;
+    var u32 ms;
+    every (_,ms) in out_sequence_end do
+        var real equ0 = TERNARY((loc.tch[0]==0), 9999, ((loc.equ[0] as real)/(loc.tch[0] as real)));
+        var real equ1 = TERNARY((loc.tch[1]==0), 9999, ((loc.equ[1] as real)/(loc.tch[1] as real)));
+        var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
+        //g_equ = g_equ + _ms2pts(equ) * ms;
+        g_dt  = g_dt + ms;
+        _ceu_dbg_assert(dt == ms);
+    end
+with
+    //var u16  touch;
+    var u8   id;
+    var u32  ms;
+    //var bool is_att;
+    every (_,id,ms,_) in out_touch do
+
+        loc.touches = loc.touches + 1;
+        loc.vel     = loc.vel     + ms;
+        loc.vol     = loc.vol     + _pow2(ms);
+        loc.pot     = loc.pot     + _sqrt(ms);
+        glb.touches = glb.touches + 1;
+        glb.vel     = glb.vel     + ms;
+        glb.vol     = glb.vol     + _pow2(ms);
+        glb.pot     = glb.pot     + _sqrt(ms);
+
+        loc.equ[id] = loc.equ[id] + ms;
+        loc.tch[id] = loc.tch[id] + 1;
+        glb.equ[id] = glb.equ[id] + ms;
+        glb.tch[id] = glb.tch[id] + 1;
+
+        //var real g_equ_;
+        dt = dt + ms;
+
+        if id == 1 then
+            _oled.setCursor(0,2);
+        else
+            _oled.setCursor(95,2);
+        end
+        _oled.print(ms);
+        _oled.print(_F("  "));
+
+        do
+            var real vel =       (loc.vel as real) / (loc.touches as real);
+            var real vol = _sqrt((loc.vol as real) / (loc.touches as real));
+            var real pot = _pow2((loc.pot as real) / (loc.touches as real));
+
+            var real equ0 = TERNARY((loc.tch[0]==0), 9999, (loc.equ[0] as real)/(loc.tch[0] as real));
+            var real equ1 = TERNARY((loc.tch[1]==0), 9999, (loc.equ[1] as real)/(loc.tch[1] as real));
+            var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
+
+            //g_equ_ = (g_equ + _ms2pts(equ)*dt) / ((g_dt + dt) as real);
+
+            _oled.setCursor(0,3);
+            _oled.println(vel);
+            _oled.println(vol);
+            _oled.println(pot);
+            _oled.println(equ);
+        end
+
+        do
+            var real vel =       (glb.vel as real) / (glb.touches as real);
+            var real vol = _sqrt((glb.vol as real) / (glb.touches as real));
+            var real pot = _pow2((glb.pot as real) / (glb.touches as real));
+
+            var real equ0 = TERNARY((glb.tch[0]==0), 9999, (glb.equ[0] as real)/(glb.tch[0] as real));
+            var real equ1 = TERNARY((glb.tch[1]==0), 9999, (glb.equ[1] as real)/(glb.tch[1] as real));
+            var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
+
+            var u16 falls = seq - 1 + 1; // assume an imminent fall
+            falls = _ceil(((falls*MS_TO_GAME) as real) / ((g_dt+dt) as real));
+
+            _oled.setCursor(95,3);
+            _oled.println(vel);
+            _oled.println(vol);
+            _oled.println(pot);
+            _oled.println(equ);
+#if 0
+           (u16)g_equ_, falls+1);
+#endif
+        end
+    end
+end
