@@ -2,7 +2,7 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 native/pos do
-    u16 A_ATAS[2];
+    u16 A_ATAS[3];
 
     u8 TABELA_DE_SEQUENCIAS[50] = {
         0, 90,90,90,90, 83,83, 76,76, 69,69, 62,62, 55,55, 46,46, 37,37,
@@ -69,79 +69,65 @@ native/pos do
             return 70;
         }
     }
-
-    tceu_callback_ret CB_ABRAF_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
-        tceu_callback_ret ret = { .is_handled=0 };
-        if (cmd != CEU_CALLBACK_OUTPUT) {
-            return ret;
-        }
-        switch (p1.num) {
-            case CEU_OUTPUT_OUT_GAME_INI: {
-                tceu_output_OUT_GAME_INI* ps = (tceu_output_OUT_GAME_INI*) p2.ptr;
-                A_ATAS[0] = 0;
-                A_ATAS[1] = 0;
-                break;
-            }
-            case CEU_OUTPUT_OUT_GAME_END: {
-                u16 seqs = *((u16*)p2.ptr);
-                u16 min = MIN(A_ATAS[0], A_ATAS[1]);
-                u16 max = MAX(A_ATAS[0], A_ATAS[1]);
-                float ratio = min/(float)max;
-                u16   N_SEQ = (seqs>=35 ? 0 : TABELA_DE_SEQUENCIAS[seqs]);
-                u16   N_ATA = min + max;
-                float N_EQU = ratio*N_ATA/4.1;
-                u16   N_INT = TABELA_DE_INTENSIDADE(N_ATA);
-                //printf("=== ABRAF\n");
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"=== ABRAF\r\n");
-                {
-                    char str[64];
-                    snprintf(str, 64, "> Sequência:   %3d => %3d\r\n", seqs, N_SEQ);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-                {
-                    char str[64];
-                    snprintf(str, 64, "> Ataques: %3d/%3d => %3d\r\n", min, max, N_ATA);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-                {
-                    char str[64];
-                    snprintf(str, 64, "> Equilíbrio:  %3d => %3d\r\n", (u16)(ratio*100), (u16)N_EQU);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-                {
-                    char str[64];
-                    snprintf(str, 64, "> Intensidade: %3d => %3d\r\n", N_ATA, N_INT);
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"> -------------------------\r\n");
-                {
-                    char str[64];
-                    snprintf(str, 64, "> TOTAL:           => %3d\r\n", (u16)(N_SEQ+N_ATA+N_INT+N_EQU+100));
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                }
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_INI:
-                break;
-            case CEU_OUTPUT_OUT_SEQUENCE_END: {
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_FALL:
-                break;
-            case CEU_OUTPUT_OUT_TOUCH: {
-                tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
-                u16 touch   = ps->_1;
-                u8  id      = ps->_2;
-                u32 dt      = ps->_3;
-                bool is_att = ps->_4;
-                if (is_att) {
-                    A_ATAS[id]++;
-                }
-                break;
-            }
-        }
-        return ret;
-    }
-    tceu_callback CB_ABRAF = { &CB_ABRAF_F, NULL };
 end
-{ ceu_callback_register(&CB_ABRAF); }
+
+par do
+    every out_game_ini do
+        {
+            A_ATAS[1] = 0;
+            A_ATAS[2] = 0;
+        }
+    end
+with
+    var u16 seqs;
+    every seqs in out_game_end do
+        var int  min   = {MIN(A_ATAS[1], A_ATAS[2])};
+        var int  max   = {MAX(A_ATAS[1], A_ATAS[2])};
+        var real ratio = min/(max as real);
+        var int  n_seq = do if (seqs>=35) then escape 0; else escape {TABELA_DE_SEQUENCIAS[@seqs]}; end end;
+        var int  n_ata = min + max;
+        var real n_equ = ratio*n_ata/4.1;
+        var int  n_int = {TABELA_DE_INTENSIDADE(@n_ata)};
+
+        _oled.clear();
+        _oled.set1X();
+        _oled.println(_F("ABRAF"));
+        _oled.println(_F("----------------"));
+
+        _oled.print(_F("Seq: "));
+        _oled.print(seqs);
+        _oled.print(_F(" = "));
+        _oled.println(n_seq);
+
+        _oled.print(_F("Ata: "));
+        _oled.print(min);
+        _oled.print(_F("/"));
+        _oled.print(max);
+        _oled.print(_F(" = "));
+        _oled.println(n_ata);
+
+        _oled.print(_F("Equ: "));
+        _oled.print(ratio);
+        _oled.print(_F(" = "));
+        _oled.println(n_equ);
+
+        _oled.print(_F("Int: "));
+        _oled.print(n_ata);
+        _oled.print(_F(" = "));
+        _oled.println(n_int);
+
+        _oled.println(_F("----------------"));
+        _oled.print(_F("TOT: "));
+        _oled.println(n_seq+n_ata+n_int+n_equ+100);
+    end
+with
+    var u16  touch;
+    var u8   id;
+    var u32  dt;
+    var bool is_att;
+    every (touch,id,dt,is_att) in out_touch do
+        if is_att then
+            {A_ATAS[@id]++;}
+        end
+    end
+end

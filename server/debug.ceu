@@ -60,6 +60,8 @@ with
         _oled.print(touch);
         if is_att then
             _oled.print(_F("*"));
+        else
+            _oled.print(_F(" "));
         end
     end
 end

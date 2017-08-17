@@ -115,11 +115,11 @@ end
 spawn do
     #include "debug.ceu"
 end
+spawn do
+    #include "abraf.ceu"
+end
 
 par do
-    //#include "abraf.ceu"
-    await FOREVER;
-with
     //#include "chico.ceu"
     await FOREVER;
 with
