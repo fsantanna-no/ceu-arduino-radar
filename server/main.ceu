@@ -38,6 +38,7 @@ A6      OLED
 #define MS_TO_GAME              10000           // 10 seconds
 //#define MS_TO_GAME              30000           // 30 seconds
 //#define MS_TO_GAME              {300000LL}      // 5 minutes
+#define MS_TO_SEQUENCE          1000            // 1 seconds
 #define MS_TO_FALL              3000            // 3 seconds
 #define DISTANCE_IN_CM          800             // 8 meters
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
@@ -140,13 +141,12 @@ with
 
         pool[2] Tone tones;
 
-        await (MS_TO_FALL)ms;
-
         var u16 seq;
         loop seq in [1 -> _[ do
             var[2*] u32 ms;
             var u32 ms_0 = _;
 
+            await (MS_TO_SEQUENCE)ms;
             emit out_sequence_ini(seq);
             do finalize with
                 var u32 dt = do

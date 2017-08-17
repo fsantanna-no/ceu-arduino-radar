@@ -1,54 +1,69 @@
-native/pos do
-    tceu_callback_ret CB_DEBUG_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
-        tceu_callback_ret ret = { .is_handled=0 };
-        if (cmd != CEU_CALLBACK_OUTPUT) {
-            return ret;
-        }
-        switch (p1.num) {
-            case CEU_OUTPUT_OUT_GAME_INI:
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)">>> game\r\n");
-                break;
-            case CEU_OUTPUT_OUT_GAME_END: {
-                char str[32];
-                snprintf(str, 32, "<<< game: %d sequences\r\n", *((u16*)p2.ptr));
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_INI: {
-                char str[32];
-                snprintf(str, 32, "\t>>> sequence %d\r\n", *((u16*)p2.ptr));
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_END: {
-                tceu_output_OUT_SEQUENCE_END* ps = (tceu_output_OUT_SEQUENCE_END*) p2.ptr;
-                char str[32];
-                snprintf(str, 32, "\t<<< sequence %d: %ldms\r\n", ps->_1, ps->_2);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                break;
-            }
-            case CEU_OUTPUT_OUT_SEQUENCE_FALL:
-                //printf("\t!!! fall\n");
-                //ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\t!!! fall\r\n");
-                break;
-            case CEU_OUTPUT_OUT_TOUCH: {
-                tceu_output_OUT_TOUCH* ps = (tceu_output_OUT_TOUCH*) p2.ptr;
-                u16  touch  = ps->_1;
-                u8   id     = ps->_2;
-                u32  dt     = ps->_3;
-                bool is_att = ps->_4;
-                char str[32];
-                snprintf(str, 32, "\t\t[%2d] id=%d %4ldms", touch, id, dt);
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)str);
-                if (is_att) {
-                    ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"    *");
-                }
-                ceu_callback_num_ptr(CEU_CALLBACK_LOG, 0, (void*)"\r\n");
-                break;
-            }
-        }
-        return ret;
-    }
-    tceu_callback CB_DEBUG = { &CB_DEBUG_F, NULL };
+_oled.clear();
+_oled.set1X();
+_oled.print(_F("Modo Debug..."));
+await 1s;
+
+par do
+    every out_game_ini do
+#ifdef OUTPUT_OLED
+        _oled.clear();
+        _oled.print(_F("Inicio do Jogo!"));
+#else
+        #error TODO
+#endif
+    end
+with
+    var u16 seqs;
+    every seqs in out_game_end do
+#ifdef OUTPUT_OLED
+        _oled.clear();
+        _oled.print(_F("Fim do Jogo!"));
+        _oled.setCursor(0,3);
+        _oled.print(seqs);
+        _oled.print(_F(" sequencia(s)"));
+#else
+        #error TODO
+#endif
+    end
+with
+    var u16 seq;
+    every seq in out_sequence_ini do
+        _oled.clear();
+        _oled.print(_F("Sequencia: "));
+        _oled.print(seq);
+    end
+with
+    var u16 seq;
+    var u32 dt;
+    every (seq,dt) in out_sequence_end do
+        _oled.setCursor(0,5);
+        _oled.print(_F("duracao "));
+        _oled.print(dt);
+    end
+with
+    var u16 seq;
+    every seq in out_sequence_fall do
+        _oled.setCursor(55,3);
+        _oled.print(_F(" X "));
+    end
+with
+    var u16  touch;
+    var u8   id;
+    var u32  dt;
+    var bool is_att;
+    every (touch,id,dt,is_att) in out_touch do
+        if id == 1 then
+            _oled.setCursor(0,3);
+        else
+            _oled.setCursor(90,3);
+        end
+        _oled.print(dt);
+        _oled.print(_F("  "));
+
+        _oled.setCursor(55,3);
+        _oled.print(touch);
+        if is_att then
+            _oled.print(_F("*"));
+        end
+    end
 end
-{ ceu_callback_register(&CB_DEBUG); }
