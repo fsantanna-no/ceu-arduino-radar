@@ -24,7 +24,6 @@ A5      OLED
 A6      OLED
 #endif
 
-//#define DEBUG
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
@@ -85,15 +84,12 @@ input on/off BUT_OK;
 input on/off BUT_PLUS;
 input on/off BUT_MINUS;
 
-#ifdef DEBUG
-#include "tests.ceu"
-#else
 #include "tone.ceu"
 #include "input.ceu"
+
 do
     //#include "config.ceu"
 end
-#endif
 
 do
 #if 0
@@ -148,7 +144,6 @@ do
                 emit out_sequence_end(seq,dt);
             end
 
-_ceu_dbg_assert(0);
             spawn Tone_Ball in tones;
 
             do
