@@ -2,33 +2,21 @@
     #error TODO
 #endif
 
-par/or do
-    var u8 id;
-    var bool is_fore;
+spawn do
     pool[1] Tone tones;
     loop do
-        (id,is_fore) = await IN_TOUCH;
-#ifdef OUTPUT_OLED
+        var u8 id = await IN_TOUCH;
         _oled.set2X();
         _oled.setCursor(80,3);
         _oled.print(id);
         await 250ms;
         _oled.setCursor(80,3);
         _oled.print(_F(" "));
-#else
-        {
-            Serial.print("id: ");  Serial.print(@id);
-            Serial.print(" ");
-            Serial.print("f/b: "); Serial.println(@is_fore);
-        }
-#endif
-        if is_fore then
-            spawn Tone_Fore in tones;
-        else
-            spawn Tone_Back in tones;
-        end
+        spawn Tone_Touch in tones;
     end
-with
+end
+
+do
     var int id = 2;
     var int i;
     loop i do
@@ -78,7 +66,15 @@ with
     end
 end
 
-// TODO: await confirms
+_oled.clear();
+_oled.set1X();
+_oled.print(_F("Config OK?"));
+
+par/and do
+    var u8 id = await IN_TOUCH until id==1;
+with
+    var u8 id = await IN_TOUCH until id==2;
+end
 
 _oled.clear();
 _oled.set1X();

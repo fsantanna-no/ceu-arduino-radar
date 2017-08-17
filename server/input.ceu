@@ -71,7 +71,7 @@ spawn do
                 var on/off v = await BUT_PLUS until v;
                 await async (ok) do
                     if ok then
-                        emit IN_TOUCH(1,true);
+                        emit IN_TOUCH(1);
                     else
                         emit IN_CONFIG(1);
                     end
@@ -82,7 +82,7 @@ spawn do
                 var on/off v = await BUT_MINUS until v;
                 await async (ok) do
                     if ok then
-                        emit IN_TOUCH(2,true);
+                        emit IN_TOUCH(2);
                     else
                         emit IN_CONFIG(-1);
                     end

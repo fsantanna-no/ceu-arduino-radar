@@ -43,17 +43,17 @@ A6      OLED
 #define ATTACK_THRESHOLD_IN_MS  500             // 0.5s
 #define RULE_20
 
-input  (u8,bool)         IN_TOUCH;
+input  u8                IN_TOUCH;
 input  int               IN_CONFIG;
 
 output &u32              GET_TIME;
 
-event  (u8,u8)           out_game_ini;          // idA, idB
+event  none              out_game_ini;
 event  u16               out_game_end;          // #seqs
 event  u16               out_sequence_ini;      // seq
 event  (u16,u32)         out_sequence_end;      // seq, dt
 event  u16               out_sequence_fall;     // seq
-event  (u16,u8,u32,bool) out_touch;             // touch, id, dt
+event  (u16,u8,u32,bool) out_touch;             // touch, id, dt, is_att
 
 input byte SERIAL_RECEIVE_BYTE;
 
@@ -123,13 +123,7 @@ par do
     await FOREVER;
 with
     loop do
-        var u8 idA;
-        var u8 idB;
-        (idA,_) = await IN_TOUCH;
-        (idB,_) = await IN_TOUCH until (idA != idB);
-        _ceu_dbg_assert(idA+idB == 3);
-
-        emit out_game_ini(idA,idB);
+        emit out_game_ini;
         spawn Tone_Start;
         await 500ms;                                    // skip storm
 
@@ -142,9 +136,8 @@ with
             var[2*] u32 ms;
             var u32 ms_0 = _;
 
-            var u8 id1;
-            (id1,_) = await IN_TOUCH;                // start counting after 0th touch
-            //emit out_touch(0, id1, -1);
+            var u8 idA = await IN_TOUCH;                // start counting after 0th touch
+            //emit out_touch(0, idA, -1);
 
             emit out_sequence_ini(seq);
             do finalize with
@@ -176,9 +169,7 @@ with
                     await (MS_TO_FALL)ms;
                     break;
                 with                                    // alternate touches between idA/idB
-                    var u8 id2;
-                    var bool is_fore;
-                    (id2,is_fore) = await IN_TOUCH until (id2 != id1);
+                    var u8 idB = await IN_TOUCH until (idB != idA);
                     do
                         var u32 now = _;
                         emit GET_TIME(&now);
@@ -198,21 +189,13 @@ with
 #endif
                     end;
 
-                    emit out_touch(touch, id1, dt, is_att);
-                    if is_fore then
-                        if is_att then
-                            spawn Tone_Fore_Attack in tones;
-                        else
-                            spawn Tone_Fore in tones;
-                        end
+                    emit out_touch(touch, idA, dt, is_att);
+                    if is_att then
+                        spawn Tone_Attack in tones;
                     else
-                        if is_att then
-                            spawn Tone_Back_Attack in tones;
-                        else
-                            spawn Tone_Back in tones;
-                        end
+                        spawn Tone_Touch in tones;
                     end
-                    id1 = id2;
+                    idA = idB;
 
                     ms_game = ms_game + dt;
                     if ms_game >= MS_TO_GAME then       // CHECK TOTAL GAME TIME
