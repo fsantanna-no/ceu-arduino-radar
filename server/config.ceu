@@ -3,7 +3,6 @@
 #endif
 
 spawn do
-    pool[1] Tone tones;
     loop do
         var u8 id = await IN_TOUCH;
         _oled.set2X();
@@ -12,7 +11,7 @@ spawn do
         await 250ms;
         _oled.setCursor(80,3);
         _oled.print(_F(" "));
-        spawn Tone_Touch in tones;
+        emit Tone_Touch;
     end
 end
 
@@ -25,11 +24,7 @@ do
         _oled.clear();
         _oled.set1X();
         _oled.print(_F("Config "));
-        if id == 1 then
-            _oled.print(_F("ESQ..."));
-        else
-            _oled.print(_F("DIR..."));
-        end
+        _oled.print({(@id == 1) ? F("ESQ...") : F("DIR...")});
 
         var int cfg = 0;
         loop do

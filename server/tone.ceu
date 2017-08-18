@@ -1,47 +1,58 @@
 #include "arduino/arduino.ceu"
 
-#define Tone_Start  Tone(1000,true,10)
-#define Tone_End    Tone(1000,false,10)
-#define Tone_Ball   Tone(1000,true,5)
-#define Tone_Fall   Tone(1000,false,5)
-#define Tone_Touch  Tone(1000,true,1)
-#define Tone_Attack Tone(1000,true,2)
+#define Tone_Start  tone(1000,true,10)
+#define Tone_End    tone(1000,false,10)
+#define Tone_Ball   tone(1000,true,5)
+#define Tone_Fall   tone(1000,false,5)
+#define Tone_Touch  tone(1000,true,1)
+#define Tone_Attack tone(1000,true,2)
 //#define Tone_Back        Tone(500,false,1)
 //#define Tone_Back_Attack Tone(500,false,2)
 
-code/await Tone (var uint freq, var bool inc, var int i) -> none do
-    do finalize with
-        _noTone(PIN_TONE);
-    end
-    loop i in [1 -> i] do
-        if inc then
-            _tone(PIN_TONE,freq+i*100);
-        else
-            _tone(PIN_TONE,freq-i*100);
+event (uint,bool,int) tone;
+
+spawn do
+    var uint freq;
+    var bool inc;
+    var int i;
+    (freq, inc, i) = await tone;
+    loop do
+        par/or do
+            (freq, inc, i) = await tone;
+        with
+            loop i in [1 -> i] do
+                if inc then
+                    _tone(PIN_TONE,freq+i*100);
+                else
+                    _tone(PIN_TONE,freq-i*100);
+                end
+                await 50ms;
+                _noTone(PIN_TONE);
+                await 50ms;
+            end
+            await FOREVER;
         end
-        await 50ms;
         _noTone(PIN_TONE);
-        await 50ms;
     end
 end
 
 #if 0
 loop do
-    await Tone_Start;
+    emit Tone_Start;
     await 1s;
-    await Tone_End;
+    emit Tone_End;
     await 1s;
-    await Tone_Ball;
+    emit Tone_Ball;
     await 1s;
-    await Tone_Fall;
+    emit Tone_Fall;
     await 1s;
-    await Tone_Touch;
+    emit Tone_Touch;
     await 1s;
-    await Tone_Attack;
+    emit Tone_Attack;
     await 1s;
-    //await Tone_Back;
+    //emit Tone_Back;
     //await 1s;
-    //await Tone_Back_Attack;
+    //emit Tone_Back_Attack;
     //await 1s;
 end
 #endif

@@ -87,6 +87,21 @@ input on/off BUT_MINUS;
 #include "tone.ceu"
 #include "input.ceu"
 
+#if 0
+spawn do
+    loop do
+        await 500ms;
+        await async do
+            emit IN_TOUCH(1);
+        end
+        await 500ms;
+        await async do
+            emit IN_TOUCH(2);
+        end
+    end
+end
+#endif
+
 do
     //#include "config.ceu"
 end
@@ -108,8 +123,6 @@ do
     end
 #endif
 
-    pool[2] Tone tones;
-
     loop do
         // await double click
         loop do
@@ -122,7 +135,7 @@ do
 
         var u32 ms_game = 0;                            // total game time
         emit out_game_ini;
-        spawn Tone_Start;
+        emit Tone_Start;
 
         var u16 seq;
         loop seq in [1 -> _[ do
@@ -134,17 +147,11 @@ do
 
             emit out_sequence_ini(seq);
             do finalize with
-                var u32 dt = do
-                    if $ms >= 2 then
-                        escape ms[$ms-1] - ms_0;        // ms difference between last and 0th touch
-                    else
-                        escape 0;
-                    end
-                end;
-                emit out_sequence_end(seq,dt);
+                var u32 dt = {(@($ms >= 2)) ? @(ms[$ms-1] - ms_0) : 0};
+                emit out_sequence_end(seq,dt);          // ms difference between last and 0th touch
             end
 
-            spawn Tone_Ball in tones;
+            emit Tone_Ball;
 
             do
                 var u32 now = _;
@@ -184,9 +191,9 @@ do
 
                     emit out_touch(touch, idA, dt, is_att);
                     if is_att then
-                        spawn Tone_Attack in tones;
+                        emit Tone_Attack;
                     else
-                        spawn Tone_Touch in tones;
+                        emit Tone_Touch;
                     end
                     idA = idB;
 
@@ -198,10 +205,10 @@ do
             end
 
             emit out_sequence_fall(seq);
-            spawn Tone_Fall in tones;
+            emit Tone_Fall;
         end
 
         emit out_game_end(seq);
-        spawn Tone_End in tones;
+        emit Tone_End;
     end
 end
