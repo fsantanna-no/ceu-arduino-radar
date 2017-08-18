@@ -2,7 +2,6 @@
     #error TODO
 #endif
 
-#define TERNARY(c,t,f) do if c then escape t; else escape f; end end;
 #define _pow2(v) ((v*v) as real)
 
 native/pos do
@@ -78,44 +77,31 @@ loop do
                     await async do end;
                 end
             with
+                code/tight Out_Data (var& Data dat, var int x) -> none do
+                    var real vel =       (dat.vel as real) / (dat.touches as real);
+                    var real vol = _sqrt((dat.vol as real) / (dat.touches as real));
+                    var real pot = _pow2((dat.pot as real) / (dat.touches as real));
+
+                    var real equ0 = {(@(dat.tch[1]==0)) ? 0 : @((dat.equ[1] as real)/(dat.tch[1] as real))};
+                    var real equ1 = {(@(dat.tch[2]==0)) ? 0 : @((dat.equ[2] as real)/(dat.tch[2] as real))};
+                    var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
+
+                    //g_equ_ = (g_equ + _ms2pts(equ)*dt) / ((g_dt + dt) as real);
+
+                    _oled.setCursor(x,4); _oled.print(vel as int); _oled.print(_F(" "));
+                    _oled.setCursor(x,5); _oled.print(vol as int); _oled.print(_F(" "));
+                    _oled.setCursor(x,6); _oled.print(pot as int); _oled.print(_F(" "));
+                    _oled.setCursor(x,7); _oled.print(equ as int); _oled.print(_F(" "));
+                end
+
                 loop do
-                    do
-                        var real vel =       (loc.vel as real) / (loc.touches as real);
-                        var real vol = _sqrt((loc.vol as real) / (loc.touches as real));
-                        var real pot = _pow2((loc.pot as real) / (loc.touches as real));
-
-                        var real equ0 = TERNARY((loc.tch[1]==0), 0, (loc.equ[1] as real)/(loc.tch[1] as real));
-                        var real equ1 = TERNARY((loc.tch[2]==0), 0, (loc.equ[2] as real)/(loc.tch[2] as real));
-                        var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
-
+                    call Out_Data(&loc, 0);
                         //g_equ_ = (g_equ + _ms2pts(equ)*dt) / ((g_dt + dt) as real);
 
-                        _oled.setCursor(0,4); _oled.print(vel as int); _oled.print(_F(" "));
-                        _oled.setCursor(0,5); _oled.print(vol as int); _oled.print(_F(" "));
-                        _oled.setCursor(0,6); _oled.print(pot as int); _oled.print(_F(" "));
-                        _oled.setCursor(0,7); _oled.print(equ as int); _oled.print(_F(" "));
-                    end
-
-                    do
-                        var real vel =       (glb.vel as real) / (glb.touches as real);
-                        var real vol = _sqrt((glb.vol as real) / (glb.touches as real));
-                        var real pot = _pow2((glb.pot as real) / (glb.touches as real));
-
-                        var real equ0 = TERNARY((glb.tch[1]==0), 0, (glb.equ[1] as real)/(glb.tch[1] as real));
-                        var real equ1 = TERNARY((glb.tch[2]==0), 0, (glb.equ[2] as real)/(glb.tch[2] as real));
-                        var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
-
-                        var u16 falls = g_seq - 1 + 1; // assume an imminent fall
-                        falls = _ceil(((falls*MS_TO_GAME) as real) / ((g_dt+dt) as real));
-
-                        _oled.setCursor(95,4); _oled.print(vel as int); _oled.print(_F(" "));
-                        _oled.setCursor(95,5); _oled.print(vol as int); _oled.print(_F(" "));
-                        _oled.setCursor(95,6); _oled.print(pot as int); _oled.print(_F(" "));
-                        _oled.setCursor(95,7); _oled.print(equ as int); _oled.print(_F(" "));
-#if 0
-                       (u16)g_equ_, falls+1);
-#endif
-                    end
+                    call Out_Data(&glb, 95);
+                        //var u16 falls = g_seq - 1 + 1; // assume an imminent fall
+                        //falls = _ceil(((falls*MS_TO_GAME) as real) / ((g_dt+dt) as real));
+                       //(u16)g_equ_, falls+1);
 
                     var u16  touch;
                     var u8   id;
@@ -124,21 +110,13 @@ loop do
                     (touch,id,ms,is_att) = await out_touch;
 
                     do
-                        if id == 1 then
-                            _oled.setCursor(0,2);
-                        else
-                            _oled.setCursor(95,2);
-                        end
+                        _oled.setCursor({((@(id==1)) ? 0 : 95)}, 2);
                         _oled.print(ms);
                         _oled.print(_F("  "));
 
                         _oled.setCursor(55,2);
                         _oled.print(touch);
-                        if is_att then
-                            _oled.print(_F("*"));
-                        else
-                            _oled.print(_F("  "));
-                        end
+                        _oled.print({(@is_att) ? F("*") : F("  ")});
                     end
 
                     do
