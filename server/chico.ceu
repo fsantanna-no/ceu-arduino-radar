@@ -64,11 +64,9 @@ loop do
                 g_equ = g_equ + _ms2pts(equ) * ms;
 #endif
             with
-                var u32 old = _;
-                emit GET_TIME(&old);
+                var u32 old = _millis();
                 loop do
-                    var u32 now = _;
-                    emit GET_TIME(&now);
+                    var u32 now = _millis();
                     var s32 ms = (left - ((now-old) as s32));
                     _oled.setCursor(80,0);
                     _oled.print(ms/1000);
@@ -95,13 +93,37 @@ loop do
                 end
 
                 loop do
+#if 0
                     call Out_Data(&loc, 0);
                         //g_equ_ = (g_equ + _ms2pts(equ)*dt) / ((g_dt + dt) as real);
 
                     call Out_Data(&glb, 95);
                         //var u16 falls = g_seq - 1 + 1; // assume an imminent fall
                         //falls = _ceil(((falls*MS_TO_GAME) as real) / ((g_dt+dt) as real));
-                       //(u16)g_equ_, falls+1);
+                        //(u16)g_equ_, falls+1);
+#else
+                    var real vel =       (loc.vel as real) / (loc.touches as real);
+                    var real vol = _sqrt((loc.vol as real) / (loc.touches as real));
+                    var real pot = _pow2((loc.pot as real) / (loc.touches as real));
+                    var real equ0 = {(@(loc.tch[1]==0)) ? 0 : @((loc.equ[1] as real)/(loc.tch[1] as real))};
+                    var real equ1 = {(@(loc.tch[2]==0)) ? 0 : @((loc.equ[2] as real)/(loc.tch[2] as real))};
+                    var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
+                    _oled.setCursor(0,4); _oled.print(vel as int); _oled.print(_F(" "));
+                    _oled.setCursor(0,5); _oled.print(vol as int); _oled.print(_F(" "));
+                    _oled.setCursor(0,6); _oled.print(pot as int); _oled.print(_F(" "));
+                    _oled.setCursor(0,7); _oled.print(equ as int); _oled.print(_F(" "));
+
+                    var real vel =       (glb.vel as real) / (glb.touches as real);
+                    var real vol = _sqrt((glb.vol as real) / (glb.touches as real));
+                    var real pot = _pow2((glb.pot as real) / (glb.touches as real));
+                    var real equ0 = {(@(glb.tch[1]==0)) ? 0 : @((glb.equ[1] as real)/(glb.tch[1] as real))};
+                    var real equ1 = {(@(glb.tch[2]==0)) ? 0 : @((glb.equ[2] as real)/(glb.tch[2] as real))};
+                    var real equ  = _sqrt((_pow2(equ0) + _pow2(equ1)) / 2);
+                    _oled.setCursor(95,4); _oled.print(vel as int); _oled.print(_F(" "));
+                    _oled.setCursor(95,5); _oled.print(vol as int); _oled.print(_F(" "));
+                    _oled.setCursor(95,6); _oled.print(pot as int); _oled.print(_F(" "));
+                    _oled.setCursor(95,7); _oled.print(equ as int); _oled.print(_F(" "));
+#endif
 
                     var u16  touch;
                     var u8   id;

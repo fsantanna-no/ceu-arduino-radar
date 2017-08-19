@@ -1,21 +1,3 @@
-native/pos do
-    tceu_callback_ret CB_INPUT_F (int cmd, tceu_callback_arg p1, tceu_callback_arg p2, const char* file, u32 line) {
-        tceu_callback_ret ret = { .is_handled=0 };
-        if (cmd != CEU_CALLBACK_OUTPUT) {
-            return ret;
-        }
-        switch (p1.num) {
-            case CEU_OUTPUT_GET_TIME:
-                *(*((u32**)p2.ptr)) = millis();
-                ret.is_handled = 1;
-                break;
-        }
-        return ret;
-    }
-    tceu_callback CB_INPUT = { &CB_INPUT_F, NULL };
-end
-{ ceu_callback_register(&CB_INPUT); }
-
 spawn do
     par do
         native _radio;
