@@ -16,15 +16,14 @@ spawn do
 end
 
 do
-    var int id = 2;
-    var int i;
-    loop i do
-        id = 3 - id;
-
+    var int id;
+    loop id in [1->2] do
         _oled.clear();
         _oled.set1X();
         _oled.print(_F("Config "));
         _oled.print({(@id == 1) ? F("ESQ...") : F("DIR...")});
+
+        _radio_write(&&id, 1);
 
         var int cfg = 0;
         loop do
@@ -36,13 +35,7 @@ do
 
             var int but = await IN_CONFIG;
             if but == 0 then
-                watching 500ms do
-                    var int but_ = await IN_CONFIG until but_==0;
-                    var byte v = 0;
-                    _radio_write(&&v, 1);
-                    break/i;
-                end
-                var byte v = id;
+                var byte v = 0;
                 _radio_write(&&v, 1);
                 break;
             end

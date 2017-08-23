@@ -1,13 +1,11 @@
-#define OUTPUT_OLED
-
 #if 0
 TX      Bluetooth
 RX      Bluetooth
 D2      Sound
-D3      Botao OK
-D4      Botao PLUS
-D5      Botao MINUS
-D6      TODO
+D3      Botao ??
+D4      Botao OK
+D5      Botao PLUS
+D6      Botao MINUS
 D7      Radio
 D8      Radio
 D9
@@ -33,6 +31,7 @@ A5      OLED
         - incentivar salvamentos, se não der certo (cair em seguida), não conta pra média
 #endif
 
+#define OUTPUT_OLED
 #define MS_TO_GAME              10000           // 10 seconds
 //#define MS_TO_GAME              30000           // 30 seconds
 //#define MS_TO_GAME              {300000LL}      // 5 minutes
@@ -71,15 +70,24 @@ end
 _Serial.println("ok");
 _delay(1000);
 
-#define PIN_TONE 2
-output bool PIN_02;
+#define PIN_TONE 3
+output bool PIN_03;
 
-#define BUT_OK    PIN_03
-#define BUT_PLUS  PIN_04
+#define BUT_OK    PIN_06
 #define BUT_MINUS PIN_05
+#define BUT_PLUS  PIN_04
 input on/off BUT_OK;
 input on/off BUT_PLUS;
 input on/off BUT_MINUS;
+
+native/pre do
+    ##define CEU_INPUT_PIN_04_INVERT
+    ##define CEU_INPUT_PIN_05_INVERT
+    ##define CEU_INPUT_PIN_06_INVERT
+end
+_pinMode(4, _INPUT_PULLUP);
+_pinMode(5, _INPUT_PULLUP);
+_pinMode(6, _INPUT_PULLUP);
 
 #include "tone.ceu"
 #include "input.ceu"
