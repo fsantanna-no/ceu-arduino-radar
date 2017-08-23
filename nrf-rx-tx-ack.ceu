@@ -1,0 +1,63 @@
+#include "arduino/arduino.ceu"
+
+native _radio;
+native/pos do
+    ##include <SPI.h>
+    ##include <nRF24L01.h>
+    ##include <RF24.h>
+
+    const uint64_t pipe =  0xAABBCCDDEELL;
+    byte V = 0;
+    RF24 radio(8,7);
+end
+
+{ 
+    Serial.begin(9600);
+    radio.begin();
+    radio.disableCRC();
+    radio.setPayloadSize(1);
+    radio.setAutoAck(false);
+    radio.setDataRate(RF24_2MBPS);
+    radio.openReadingPipe(1,pipe);
+    radio.startListening();
+    radio.openWritingPipe(pipe);
+}
+
+#define IN  PIN_02
+#define OUT PIN_03
+
+output on/off OUT;
+input  on/off IN;
+
+par do
+    await async do
+        loop do
+            if {radio.available()} as bool then
+                var byte v = _;
+                { radio.read(@(&&v), 1); }
+                _Serial.print("> "); _Serial.println(v);
+                emit OUT(on);
+                _delay(100);
+                emit OUT(off);
+            end
+        end
+    end
+with
+    loop do
+        await 1s;
+        {
+            Serial.print(V);
+            Serial.print(" > ");
+            radio.stopListening();
+        }
+        var u32 old = _micros();
+        {
+            radio.write(&V, 1);
+            radio.startListening();
+            V++;
+        }
+        await IN;
+        var u32 now = _micros();
+        _Serial.println(now-old);
+    end
+end
