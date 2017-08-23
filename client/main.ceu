@@ -1,9 +1,21 @@
+#if 0
+D7      Radio
+D8      Radio
+D9
+D10
+D11     Radio
+D12     Radio
+D13     Radio
+A0
+A1      Microfone
+#endif
+
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
 #define MIC_THRESHOLD   100
 #define PIEZO_THRESHOLD XXX
-#define PIN_PIEZO       A1
+#define PIN_PIEZO       AX
 #define PIN_MIC         A0
 
 #define EEPROM_ID 0
@@ -74,7 +86,7 @@ par do
         else
             _radio_write(&&id, 1);
         end
-        id = 3-id;
+        //id = 3-id;
         await 200ms;        // skip continuous "s1.ok" vibration
     end
 with
