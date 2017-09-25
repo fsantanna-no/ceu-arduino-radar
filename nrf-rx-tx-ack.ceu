@@ -14,9 +14,9 @@ end
 { 
     Serial.begin(9600);
     radio.begin();
-    radio.disableCRC();
+    //radio.disableCRC();
     radio.setPayloadSize(1);
-    radio.setAutoAck(false);
+    radio.setAutoAck(false);              // true by default
     radio.setDataRate(RF24_2MBPS);
     radio.openReadingPipe(1,pipe);
     radio.startListening();

@@ -13,13 +13,17 @@ A1      Microfone
 #include "c.ceu"
 #include "arduino/arduino.ceu"
 
-#define MIC_THRESHOLD   100
-#define PIEZO_THRESHOLD XXX
-#define PIN_PIEZO       AX
+#define AMP
+#ifdef AMP
+#define PIN_MIC         A1
+#define MIC_THRESHOLD   1023
+#else
 #define PIN_MIC         A0
+#define MIC_THRESHOLD   10
+#endif
 
-#define EEPROM_ID 0
-#define EEPROM_S1 1
+#define EEPROM_ID  0
+#define EEPROM_MIC 1
 
 native/pre do
     ##include <EEPROM.h>
@@ -38,6 +42,7 @@ native/pos do
     RF24 radio(8,7);
 end
 
+#if 0
 code/await Sensor (var int pin, var int threshold_ini, var s8 threshold_acc) -> (event int ok) -> NEVER do
     loop do
         var int dif = _;
@@ -61,33 +66,95 @@ code/await Sensor (var int pin, var int threshold_ini, var s8 threshold_acc) -> 
         emit ok(dif);
     end
 end
+#else
+code/await Sensor (var int pin) -> none do
+    loop do
+        await async (pin) do
+            loop do
+                var int cur = _analogRead(pin);
+                if cur >= 600 then
+                    break;
+                end
+            end
+        end
+        watching 20ms do
+            await async (pin) do
+                var int i;
+                loop i in [1->3] do
+                    loop do
+                        var int cur = _analogRead(pin);
+                        if cur <= 300 then
+                            break;
+                        end
+                    end
+                    loop do
+                        var int cur = _analogRead(pin);
+                        if cur >= 600 then
+                            break;
+                        end
+                    end
+                end
+            end
+            escape;
+        end
+    end
+end
+#endif
 
 {
     radio.begin();
+    //radio.disableCRC();
+    radio.setPayloadSize(1);
     radio.setAutoAck(false);              // true by default
-    radio.setDataRate(RF24_1MBPS);
+    radio.setDataRate(RF24_2MBPS);
     radio.openReadingPipe(1,pipe);
     radio.startListening();
     radio.openWritingPipe(pipe);
+
+    //analogReference(INTERNAL);
+
+    Serial.begin(9600);
 }
 
-_Serial.begin(9600);
+//#define TOGGLE
 
 var  yes/no in_cfg = yes;
+#if 0
+var& Sensor mic    = spawn Sensor(PIN_MIC, MIC_THRESHOLD, ({EEPROM[EEPROM_MIC]} as s8));
+#endif
+#ifdef TOGGLE
+var  u8     id     = 1;
+#else
 var  u8     id     = {EEPROM[EEPROM_ID]};
-var& Sensor s1     = spawn Sensor(PIN_MIC, MIC_THRESHOLD, ({EEPROM[EEPROM_S1]} as s8));
+#endif
 
 par do
+#if 0
+    var int i;
+    loop i in [0->2[ do
+        await 1s;
+        _Serial.print("id: ");  _Serial.println(id);
+        _radio_write_read(&&id, 1);
+        id = 3-id;
+    end
+#endif
     loop do
-        await s1.ok;
+#if 0
+        await mic.ok;
+#else
+        //await 1s;
+        await Sensor(PIN_MIC);
+#endif
         _Serial.print("id: ");  _Serial.println(id);
         if in_cfg then
             _radio_write_read(&&id, 1);
         else
             _radio_write(&&id, 1);
+#ifdef TOGGLE
+            id = 3-id;
+#endif
         end
-        //id = 3-id;
-        await 200ms;        // skip continuous "s1.ok" vibration
+        await 200ms;        // skip continuous "mic.ok" vibration
     end
 with
 
@@ -115,8 +182,10 @@ _Serial.println(v);
 
     _Serial.print("ID: ");
     _Serial.println(id);
-    _Serial.print("S1: ");
-    _Serial.println(s1.threshold_acc);
+#if 0
+    _Serial.print("MIC: ");
+    _Serial.println(mic.threshold_acc);
+#endif
 
     loop do
         var byte v = await Read();
@@ -132,16 +201,20 @@ _Serial.println(v);
         var bool dec = (v & {0b00010000}) as bool;
         var bool inc = (v & {0b00100000}) as bool;
 
-        s1.threshold_acc = s1.threshold_acc + (inc as int) - (dec as int);
+#if 0
+        mic.threshold_acc = mic.threshold_acc + (inc as int) - (dec as int);
+#endif
 
         _Serial.print("ID: ");
         _Serial.println(id);
-        _Serial.print("S1: ");
-        _Serial.println(s1.threshold_acc);
+#if 0
+        _Serial.print("MIC: ");
+        _Serial.println(mic.threshold_acc);
 
         {
-            EEPROM[EEPROM_ID] = @id;
-            EEPROM[EEPROM_S1] = @s1.threshold_acc;
+            EEPROM[EEPROM_ID]  = @id;
+            EEPROM[EEPROM_MIC] = @mic.threshold_acc;
         }
+#endif
     end
 end

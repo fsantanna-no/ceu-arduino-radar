@@ -14,8 +14,10 @@ end
 { 
     Serial.begin(9600);
     radio.begin();
-    radio.setAutoAck(false);
-    radio.setDataRate(RF24_1MBPS);
+    //radio.disableCRC();
+    radio.setPayloadSize(1);
+    radio.setAutoAck(false);              // true by default
+    radio.setDataRate(RF24_2MBPS);
     radio.openReadingPipe(1,pipe);
     radio.startListening();
 }
@@ -25,6 +27,7 @@ await async do
         if {radio.available()} as bool then
             var byte v = _;
             { radio.read(@(&&v), 1); }
+            //_Serial.println(v);
             _Serial.println(_map(v,0,255,0,1023));
         end
     end
