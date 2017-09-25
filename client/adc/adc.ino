@@ -4,7 +4,7 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 //#define radio_read(a,b)  radio.read(a,b)
-//#define radio_write(a,b) { for (int i=0; i<1; i++) { radio.write(a,b); } }
+#define radio_write(a,b) { for (int i=0; i<5; i++) { radio.write(a,b); } }
 //#define radio_write_read(a,b) { radio.stopListening(); for (int i=0; i<1; i++) { radio.write(a,b); } radio.startListening(); }
 const uint64_t pipe =  0xAABBCCDDEELL;
 RF24 radio(8,7);
@@ -50,13 +50,14 @@ void setup() {
   Serial.println(id);
 #endif
   radio.stopListening();
+  //radio_write(&id, 1);
 
   //pinMode(13,OUTPUT);
 }
 
 void loop() {
   if (is_detected) {
-    radio.write(&id, 1);
+    radio_write(&id, 1);
     Serial.print("id: ");  Serial.println(id);
     delay(200);   // skip continuous "mic.ok" vibration
 

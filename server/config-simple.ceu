@@ -1,0 +1,52 @@
+#ifndef OUTPUT_OLED
+    #error TODO
+#endif
+
+spawn do
+    loop do
+        var u8 id = await IN_TOUCH;
+        _oled.set2X();
+        _oled.setCursor(80,3);
+        _oled.print(id);
+        await 250ms;
+        _oled.setCursor(80,3);
+        _oled.print(_F(" "));
+        emit Tone_Touch;
+    end
+end
+
+do
+    var int id;
+    loop id in [1->2] do
+        _oled.clear();
+        _oled.set1X();
+        _oled.print(_F("Config "));
+        _oled.print({(@id == 1) ? F("ESQ...") : F("DIR...")});
+
+        par/or do
+            every 500ms do
+                _radio_write(&&id, 1);
+            end
+        with
+            var u8 id_ = await IN_TOUCH until (id == id_);
+        end
+    end
+end
+
+_oled.clear();
+_oled.set1X();
+_oled.print(_F("Config OK?"));
+
+par/and do
+    var u8 id = await IN_TOUCH until id==1;
+with
+    var u8 id = await IN_TOUCH until id==2;
+end
+
+_oled.clear();
+_oled.set1X();
+_oled.print(_F("Config OK!"));
+
+await 1s;
+
+//_Serial.println("Start...");

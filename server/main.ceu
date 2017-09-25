@@ -1,9 +1,9 @@
 #if 0
 TX      Bluetooth
 RX      Bluetooth
-D2      Sound
-D3      Botao ??
-D4      Botao OK
+D2      Botao ??
+D3      Botao OK
+D4      Sound
 D5      Botao PLUS
 D6      Botao MINUS
 D7      Radio
@@ -70,12 +70,12 @@ end
 _Serial.println("ok");
 _delay(1000);
 
-#define PIN_TONE 3
-output bool PIN_03;
+#define PIN_TONE 4
+output bool PIN_04;
 
 #define BUT_OK    PIN_06
 #define BUT_MINUS PIN_05
-#define BUT_PLUS  PIN_04
+#define BUT_PLUS  PIN_03
 input on/off BUT_OK;
 input on/off BUT_PLUS;
 input on/off BUT_MINUS;
@@ -115,7 +115,7 @@ end
 #endif
 
 do
-    #include "config.ceu"
+    #include "config-simple.ceu"
 end
 
 do
